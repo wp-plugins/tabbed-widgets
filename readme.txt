@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kaspa
 Tags: widget, widgets, tabs, tabbed widgets, accordion, sidebar, ui
 Requires at least: 2.5
 Tested up to: 2.6
-Stable tag: 0.1
+Stable tag: 0.12
 
 Put widgets into tabbed or accordion interface without writing a single line of code. 
 
