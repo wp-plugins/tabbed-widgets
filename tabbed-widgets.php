@@ -61,7 +61,7 @@ class tabbedWidgets {
 			}
 			
 			// if 2.5 or below then add jQuery UI tabs scripts
-			if ($add_tabs) {
+			if ($add_tabs_js) {
 				wp_enqueue_script('tw-tabs',  $this->plugin_path . 'js/jquery-ui-tabs.min.js', array($libtitle));
 				wp_enqueue_script('tw-tabsextpack',  $this->plugin_path . 'js/ui.tabs.ext.pack.js', array($libtitle));
 			}
