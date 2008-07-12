@@ -3,7 +3,7 @@
 Plugin Name: Tabbed Widgets
 Plugin URI: http://konstruktors.com/blog/
 Description: Put widgets into a tabbed or an accordionn type widget
-Version: 0.1
+Version: 0.11
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com/blog/
 
