@@ -3,7 +3,7 @@
 Plugin Name: Tabbed Widgets
 Plugin URI: http://konstruktors.com/blog/
 Description: Put widgets into a tabbed or an accordionn type widget
-Version: 0.13
+Version: 0.14
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com/blog/
 
@@ -47,10 +47,10 @@ class tabbedWidgets {
 
 			if (function_exists('get_avatar') && !class_exists('WP_Dependencies')) {
  				// 2.5
+				$add_tabs_js = true;
  				wp_enqueue_script('jquery');
 			} elseif (class_exists('WP_Dependencies')) { 
 				// 2.6 or up
-				$add_tabs_js = true;
 				wp_enqueue_script('jquery-ui-core');
 				wp_enqueue_script('jquery-ui-tabs');
 			} else {
