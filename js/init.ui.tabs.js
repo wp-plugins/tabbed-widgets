@@ -48,10 +48,12 @@ $tw(document).ready(function() {
 				}).tabs('rotate', $set_interval);
 			
 			$tw(this).removeClass('acc');
-
-			if ($tw.browser['safari']) $tw('ul.tw-nav-list a').cornerz({radius:3, corners:"tr tl br"});
-				else if (($tw.browser['msie'])) $tw('ul.tw-nav-list a').cornerz({radius:6, corners:"tr tl br"});
-					else $tw('ul.tw-nav-list a').cornerz({radius:4, corners:"tr tl br"});
+			
+			if ($tw_rounded_corners) {
+				if ($tw.browser['safari']) $tw('ul.tw-nav-list a').cornerz({radius:3, corners:"tr tl br"});
+					else if (($tw.browser['msie'])) $tw('ul.tw-nav-list a').cornerz({radius:6, corners:"tr tl br"});
+						else $tw('ul.tw-nav-list a').cornerz({radius:4, corners:"tr tl br"});
+			}
 			
 		} else if ($widgetstyle == 'accordion') {
 			
@@ -129,13 +131,15 @@ $tw(document).ready(function() {
 			$tw(this).removeClass('tw-hovered');
 		});
 		
-		$tw('.tw-widgettitle').each(function() {
-			$tw(this).cornerz({radius:6});
-		});
+		if ($tw_rounded_corners) {
+			$tw('.tw-widgettitle').each(function() {
+				$tw(this).cornerz({radius:6});
+			});
+		}
 		
 	});
 	
-	if (!$tw.browser['msie'] && $tw.browser.version !== 6) {
+	if (!$tw.browser['msie'] && $tw.browser.version !== 6 && $tw_rounded_corners) {
 		$tw('.tw-accordion').each(function() {
 			// $tw(this).cornerz({radius:5});
 		});

@@ -7,7 +7,7 @@
 
 /* tabs */
 ul.tw-nav-list, #sidebar ul.tw-nav-list { list-style: none; float:left; width:100%; margin:0; padding:0; }
-ul.tw-nav-list li, #sidebar ul.tw-nav-list li { list-style:none; list-style-image:none; display:block; float:left; clear:none; margin:0 2px 0 0; padding:0;  }
+ul.tw-nav-list li, #sidebar ul.tw-nav-list li { list-style:none; list-style-image:none; display:block; float:left; clear:none; margin:0 2px 0 0; padding:0 0 3px 0;  }
 ul.tw-nav-list li:before, #sidebar ul.tw-nav-list li:before, #sidebar li.widget:before { content:''; }
 ul.tw-nav-list a, #sidebar ul.tw-nav-list a { font-weight:bold; float:left; width:auto; padding:0.45em 0.6em 0.55em; color:#333; background: #eee url('../images/accordion-darker-bar.png') repeat-x left top; }
 ul.tw-nav-list a:hover, #sidebar ul.tw-nav-list a:hover { text-decoration:underline; color:#000; background-color:#ddd;  }
@@ -20,7 +20,7 @@ ul.tw-nav-list li.ui-tabs-selected a:hover, #sidebar li.ui-tabs-selected a:hover
 * html #sidebar .ui-tabs-panel { float:none; } 
 
 /* accordion  */
-.tw-accordion { float:left; width:100%; padding:0; margin:0; background:#fff; }
+.tw-accordion { float:left; width:100%; padding:0; margin:0; }
 .tw-accordion .tabbed-widget-item { float:left; width:100%; margin:0; padding:0; overflow:hidden; }
 .tw-accordion .tw-widgettitle { font-size:1.1em; background:#eee; display:block; float:left; width:100%; padding:0.45em 0 0.45em 0; margin:2px 0 0 0; cursor: pointer; }
 .tw-accordion .tw-widgettitle span { display:block; padding:0 0.75em; background: transparent url('../images/accordion-collapsed.png') no-repeat 95% 50%; cursor: pointer; }

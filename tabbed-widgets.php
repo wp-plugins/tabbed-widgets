@@ -3,7 +3,7 @@
 Plugin Name: Tabbed Widgets
 Plugin URI: http://konstruktors.com/blog/
 Description: Put widgets into a tabbed or an accordionn type widget
-Version: 0.12
+Version: 0.13
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com/blog/
 
@@ -105,9 +105,13 @@ class tabbedWidgets {
 		$tw_options = get_option($this->tw_options_name);
 		$options_count = count($tw_options);
 		if (empty($tw_options)) return;
+
+		if (!empty($tw_options['enable-rounded-corners'])) $rounded_corners = 'true';
+			else $rounded_corners = 'false';
 		
 		$jsvars = 'var ' . $optionsvar . ' = new Array();' . "\n";
-		
+		$jsvars .= 'var $tw_rounded_corners = ' . $rounded_corners . ";\n";
+
 		for ($count = 1; $count <= $options_count; $count++) {
 			
 			$style = $tw_options[$count]['style'];
@@ -117,15 +121,15 @@ class tabbedWidgets {
 			$randomstart = $tw_options[$count]['randomstart'];
 			
 			if (!empty($dorotate)) $dorotate = 'true';
-			else $dorotate = 'false';
+				else $dorotate = 'false';
 			
 			if (!empty($randomstart)) $randomstart = 'true';
-			else $randomstart = 'false';
+				else $randomstart = 'false';
 			
 			if ($dorotate && empty($rotatetime)) {
 				$rotatetime = $default_rotatetime;
 			}
-			
+
 			$jsvars .= $optionsvar . '[' . $count . '] = new Array();' . "\n";
 			$jsvars .= $optionsvar . '[' . $count . ']["style"] = "' . $style . "\";\n";
 			$jsvars .= $optionsvar . '[' . $count . ']["rotate"] = ' . $dorotate . ";\n";
@@ -135,7 +139,7 @@ class tabbedWidgets {
 				$jsvars .= $optionsvar . '[' . $count . ']["interval"] = ' . $rotatetime . ";\n";
 			} else {
 				$jsvars .= $optionsvar . '[' . $count . ']["interval"] = false;' . "\n";     	
-     		}
+     			}
 		}
 		
 		header('Content-type: application/x-javascript');
@@ -412,7 +416,10 @@ class tabbedWidgets {
 			. '<h2>Tabbed Widget Settings</h2>';
 		
 		$options .= $this->makeDonate();	
-		$options .= '<fieldset><div><p>' . $this->makeDefaultRotateOption($tw_options) . '</p></div></fieldset>';
+		$options .= '<fieldset>'
+			 . '<div><p>' . $this->makeDefaultRotateOption($tw_options) . '</p></div>'
+			 . $this->make_checkbox('Enable rounded corners for tabs', 'rounded-corners', 'using <a href="http://labs.parkerfox.co.uk/cornerz/">Cornerz</a> plugin for jQuery', $tw_options)
+		 	 . '</fieldset>';
 		
 		$options .= $this->makeSubmitButton();
 		
@@ -453,6 +460,21 @@ class tabbedWidgets {
 	function makeDonate() {
 		return '<p class="tw-donate"><a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kaspars%40konstruktors%2ecom&item_name=Tabbed%20Widgets%20Plugin%20for%20WordPress&no_shipping=1&no_note=1&tax=0&currency_code=EUR&lc=LV&bn=PP%2dDonationsBF&charset=UTF%2d8"><img alt="Donate" src="https://www.paypal.com/en_US/i/btn/btn_donate_LG.gif" /></a> '. __('Plugin developed by') . ' <a href="http://konstruktors.com/blog/">Kaspars Dambis</a>. '. __('If you find it useful, please consider donating.') .'</p>';
 	}	
+
+	function make_checkbox($label, $fieldname, $tip = false, $options = array()) {
+		if ($tip) $tip = '<small>(' . __($tip) . ')</small>';
+		$doenable = $options['enable-' . $fieldname];
+	
+		if (!empty($doenable)) {
+			$value = 1; $checked = 'checked="checked"';
+		} else {
+			$value = 0; $checked = '';
+		}			
+		$out = '<div><label><input type="checkbox" id="option-' . $fieldname . '" name="tw[enable-' . $fieldname . ']" '. $checked .' /> '
+			. __($label) . '</label> ' . $tip . '</div>';
+
+		return $out;
+	}
 
 	function makeSingleWidgetsList($id = 0, $count = 0, $options = array()) {
 		
@@ -531,7 +553,7 @@ class tabbedWidgets {
 		}
 		
 		$out = '<label>' . __('Default rotate interval (in seconds)') . ': ' 
-			. '<input type="text" name="tw[default_rotate_time]" value="'. $rotatetime .'" size="3" /> ' . __('(used only when tab rotation is enabled)') . '</label>';
+			. '<input type="text" name="tw[default_rotate_time]" value="'. $rotatetime .'" size="3" /> <small>(' . __('used only when tab rotation is enabled') . ')</small></label>';
 			
 		return $out;
 	}	
