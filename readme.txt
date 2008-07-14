@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kaspa
 Tags: widget, widgets, tabs, tabbed widgets, accordion, sidebar, ui
 Requires at least: 2.5
 Tested up to: 2.6
-Stable tag: 0.14
+Stable tag: 0.2
 
 Put widgets into tabbed or accordion interface without writing a single line of code. 
 
@@ -43,12 +43,16 @@ final directory tree should look like `/wp-content/plugins/tabbed-widgets/tabbed
 
 = Changelog =
 
+*	**0.2**: New feature: if a user clicks on a link inside a tab, that tab will be automatically set to open on the next page load. This is a significant usability improvement.
+*	**0.1x**: Various bug fixes
 *	**0.1**: Initial public release.
 
 
 == Frequently Asked Questions ==
 
-None yet.
+= How to change the default font/color/size of tabs or tab content? =
+
+Overwrite the default CSS rules (see `js/uitabs.css`) at the end of your theme's `style.css`.
 
 == Screenshots ==
 
