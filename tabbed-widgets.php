@@ -1,9 +1,9 @@
 <?php
 /*
 Plugin Name: Tabbed Widgets
-Plugin URI: http://konstruktors.com/blog/
-Description: Put widgets into a tabbed or an accordionn type widget
-Version: 0.14
+Plugin URI: http://wordpress.org/extend/plugins/tabbed-widgets/
+Description: Place widgets into tabbed and accordion type interface blocks. Configuration options are available under 'Design' &raquo; '<a href="themes.php?page=tabbed-widgets.php">Tabbed Widgets</a>'.
+Version: 0.2
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com/blog/
 
@@ -41,7 +41,9 @@ class tabbedWidgets {
 	function addHeader() {
 		
 		if (function_exists('wp_enqueue_script')) {
-			
+
+			$tw_options = get_option($this->tw_options_name);
+
 			$libtitle = 'jquery';			
 			$add_tabs_js = false;
 
@@ -71,8 +73,10 @@ class tabbedWidgets {
 			wp_enqueue_script('tw-accordion',  $this->plugin_path . 'js/jquery.accordion.js', array($libtitle));
 			wp_enqueue_script('tw-easing',  $this->plugin_path . 'js/jquery.easing.js', array($libtitle));
 			
-			// for rounded corners 
-			wp_enqueue_script('tw-cornerz',  $this->plugin_path . 'js/cornerz.js', array($libtitle));
+			// check if rounded corners are enabled
+			if (!empty($tw_options['enable-rounded-corners'])) {
+				wp_enqueue_script('tw-cornerz',  $this->plugin_path . 'js/cornerz.js', array($libtitle));
+			}
 			
 			// init all
 			wp_enqueue_script('tw-init',  $this->plugin_path . basename(__FILE__) . '?returnjs=true', array($libtitle));

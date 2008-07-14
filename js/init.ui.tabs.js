@@ -1,7 +1,14 @@
 
 $tw = jQuery.noConflict();
 $tw(document).ready(function() {
-	
+
+	var $tab_clicked = tw_readCookie('tab_clicked');
+	if ($tab_clicked !== null) {	
+		var $tab_clicked_array = $tab_clicked.split("-");
+		var $tab_clicked_id = $tab_clicked_array[2];
+		var $tab_clicked_id_tab = $tab_clicked_array[3];
+	}
+
 	$tw('.tw-tabbed-widgets').each(function() {
 		// tabbed-widget-1
 		var $widgetid = $tw(this).attr("id");
@@ -39,6 +46,11 @@ $tw(document).ready(function() {
 				var $set_start_tab = $randno;
 			} else {
 				var $set_start_tab = 0;
+			}
+			
+			// if the clicked on content inside tab then open the same tab now.
+			if ($tab_clicked !== null && $widgetid == $tab_clicked_id) {
+				$set_start_tab = parseInt($tab_clicked_id_tab);
 			}
 			
 			$tw(this).find('.tw-rotate .tw-nav-list').tabs({ 
@@ -79,6 +91,11 @@ $tw(document).ready(function() {
 			} else {
 				var $set_start_tab = $tabs - 1;
 			}
+
+			// if the clicked on content inside tab then open the same tab now.
+			if ($tab_clicked !== null && $widgetid == $tab_clicked_id) {
+				var $set_start_tab = parseInt($tab_clicked_id_tab);
+			}
 			
 			// activate the start tab
 			$acco.activate($set_start_tab);
@@ -94,56 +111,83 @@ $tw(document).ready(function() {
 				var $cleared = false;
 				var $wasstopped = false;
 				
-                (function() {
-                    var t = $set_start_tab;
-					var $step = 0;
-					var $saverotation;
+				(function() {
+				    var t = $set_start_tab;
+							var $step = 0;
+							var $saverotation;
 					
-					function dorotate() {
-						t = ++t;
-						if (t == $tabs) { $step = -2; t = t + $step;  }
-						else if (t == 1) { t = t; $step = 0; }
-						else { t = t + $step; }
-						$acco.accordion("activate", t);
-                    }
+							function dorotate() {
+								t = ++t;
+								if (t == $tabs) { $step = -2; t = t + $step;  }
+								else if (t == 1) { t = t; $step = 0; }
+								else { t = t + $step; }
+								$acco.accordion("activate", t);
+				    }
 					
-                    if (!$cleared) var rotation = setInterval(function(){ dorotate(); }, $set_interval);
+				    if (!$cleared) var rotation = setInterval(function(){ dorotate(); }, $set_interval);
 					
-					$tw($this_acco).bind("mouseenter",function(){
-						// alert('stop');
-						clearInterval(rotation);
-						rotation = null;
-						$cleared = true;
-				    }).bind("mouseleave",function(){
-						if (!$wasstopped) rotation = setInterval(function(){ dorotate(); }, $set_interval);
-				    }).bind("click",function(){
-						$wasstopped = true;
-						clearInterval(rotation); rotation = null;
-				    });
+							$tw($this_acco).bind("mouseenter",function(){
+								// alert('stop');
+								clearInterval(rotation);
+								rotation = null;
+								$cleared = true;
+						    }).bind("mouseleave",function(){
+								if (!$wasstopped) rotation = setInterval(function(){ dorotate(); }, $set_interval);
+						    }).bind("click",function(){
+								$wasstopped = true;
+								clearInterval(rotation); rotation = null;
+						    });
 
-                })();
+				})();
 			}
 		}
 		
+		// Add css identifier to hover item, only because IE doesn't understand h4:hover.
 		$tw('.tw-widgettitle').hover(function() {
 			$tw(this).addClass('tw-hovered');
 		}, function() {
 			$tw(this).removeClass('tw-hovered');
 		});
 		
+		// Save the id of the widget user clicked on and use it later to make it a start tab.
+		$tw('.tabbed-widget-item').click(function() {
+			tw_createCookie('tab_clicked', $tw(this).attr('id'), 1);
+		});
+		
+		// Add rounded corners if option enabled.
 		if ($tw_rounded_corners) {
 			$tw('.tw-widgettitle').each(function() {
 				$tw(this).cornerz({radius:6});
 			});
 		}
 		
-	});
-	
-	if (!$tw.browser['msie'] && $tw.browser.version !== 6 && $tw_rounded_corners) {
-		$tw('.tw-accordion').each(function() {
-			// $tw(this).cornerz({radius:5});
-		});
-
-	}	
+	});	
 	
 });
+
+/* Create, edit, delete cookies. Thanks to http://www.quirksmode.org/js/cookies.html */
+
+function tw_createCookie(name,value,days) {
+	if (days) {
+		var date = new Date();
+		date.setTime(date.getTime()+(days*24*60*60*1000));
+		var expires = "; expires="+date.toGMTString();
+	}
+	else var expires = "";
+	document.cookie = name+"="+value+expires+"; path=/";
+}
+
+function tw_readCookie(name) {
+	var nameEQ = name + "=";
+	var ca = document.cookie.split(';');
+	for(var i=0;i < ca.length;i++) {
+		var c = ca[i];
+		while (c.charAt(0)==' ') c = c.substring(1,c.length);
+		if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+	}
+	return null;
+}
+
+function tw_eraseCookie(name) {
+	tw_createCookie(name,"",-1);
+}
