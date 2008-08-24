@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kaspa
 Tags: widget, widgets, tabs, tabbed widgets, accordion, sidebar, ui
 Requires at least: 2.5
 Tested up to: 2.6
-Stable tag: 0.2
+Stable tag: 0.7
 
 Put widgets into tabbed or accordion interface without writing a single line of code. 
 
@@ -43,6 +43,7 @@ final directory tree should look like `/wp-content/plugins/tabbed-widgets/tabbed
 
 = Changelog =
 
+*	**0.7**: New feature: choose any start tab. Improved widget drop-down selection with exact widget titles. Added an invisible sidebar (widgetized area) for placing and configuring widgets that are going to be used inside the tabbed widgets. Adding automatic rotation stop also for regulat type tabs.
 *	**0.2**: New feature: if a user clicks on a link inside a tab, that tab will be automatically set to open on the next page load. This is a significant usability improvement.
 *	**0.1x**: Various bug fixes
 *	**0.1**: Initial public release.

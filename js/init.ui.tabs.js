@@ -19,6 +19,7 @@ $tw(document).ready(function() {
 		var $do_rotate = $rotateoptions[$widgetid]["rotate"];
 		var $rotate_interval = $rotateoptions[$widgetid]["interval"];
 		var $random_start = $rotateoptions[$widgetid]["randomstart"];
+		var $start_tab = $rotateoptions[$widgetid]["start"];
 			
 		if ($widgetstyle == 'tabs') {
 			
@@ -32,20 +33,14 @@ $tw(document).ready(function() {
 			var $panelcount = $tw('ul.tw-nav-list li', this).length;
 			var $randno = Math.floor($panelcount * Math.random());
 			
-			if ($do_rotate) {
-				if ($rotate_interval > 1) {
-					var $set_interval = $rotate_interval * 1000;
-				} else {
-					var $set_interval = 7000;
-				}
+			if ($start_tab > 0) {
+				var $set_start_tab = $start_tab - 1;
 			} else {
-				var $set_interval = 0;
+				var $set_start_tab = 0;
 			}
 			
 			if ($random_start) {
 				var $set_start_tab = $randno;
-			} else {
-				var $set_start_tab = 0;
 			}
 			
 			// if the clicked on content inside tab then open the same tab now.
@@ -53,13 +48,28 @@ $tw(document).ready(function() {
 				$set_start_tab = parseInt($tab_clicked_id_tab);
 			}
 			
-			$tw(this).find('.tw-rotate .tw-nav-list').tabs({ 
+			if ($do_rotate) {
+				if ($rotate_interval > 1) {
+					var $set_interval = $rotate_interval * 1000;
+				} else {
+					var $set_interval = 7000;
+				}				
+			} else {
+				var $set_interval = 0;
+			}
+			
+			var $horizontal_tabs = $tw(this).find('.tw-rotate .tw-nav-list').tabs({ 
 					selected: $set_start_tab, 
 					cache:true, 
 					fx: { opacity: 'toggle', duration: 'fast' }
-				}).tabs('rotate', $set_interval);
+			}).tabs('rotate', $set_interval);
 			
 			$tw(this).removeClass('acc');
+			
+			// If hovered, stop rotation
+			$tw(this).find('.tw-rotate .tabbed-widget-item').bind("mouseenter", function(){
+					$horizontal_tabs.tabs('rotate', null);
+			});
 			
 			if ($tw_rounded_corners) {
 				if ($tw.browser['safari']) $tw('ul.tw-nav-list a').cornerz({radius:3, corners:"tr tl br"});
@@ -113,31 +123,30 @@ $tw(document).ready(function() {
 				
 				(function() {
 				    var t = $set_start_tab;
-							var $step = 0;
-							var $saverotation;
+					var $step = 0;
+					var $saverotation;
 					
-							function dorotate() {
-								t = ++t;
-								if (t == $tabs) { $step = -2; t = t + $step;  }
-								else if (t == 1) { t = t; $step = 0; }
-								else { t = t + $step; }
-								$acco.accordion("activate", t);
+					function dorotate() {
+						t = ++t;
+						if (t == $tabs) { $step = -2; t = t + $step;  }
+						else if (t == 1) { t = t; $step = 0; }
+						else { t = t + $step; }
+						$acco.accordion("activate", t);
 				    }
 					
 				    if (!$cleared) var rotation = setInterval(function(){ dorotate(); }, $set_interval);
 					
-							$tw($this_acco).bind("mouseenter",function(){
-								// alert('stop');
-								clearInterval(rotation);
-								rotation = null;
-								$cleared = true;
-						    }).bind("mouseleave",function(){
-								if (!$wasstopped) rotation = setInterval(function(){ dorotate(); }, $set_interval);
-						    }).bind("click",function(){
-								$wasstopped = true;
-								clearInterval(rotation); rotation = null;
-						    });
-
+					$tw($this_acco).bind("mouseenter", function(){
+						clearInterval(rotation);
+						rotation = null;
+						$cleared = true;
+					}).bind("mouseleave",function(){
+						if (!$wasstopped) rotation = setInterval(function(){ dorotate(); }, $set_interval);
+					}).bind("click",function(){
+						$wasstopped = true;
+						clearInterval(rotation); rotation = null;
+					});
+					
 				})();
 			}
 		}
@@ -161,7 +170,7 @@ $tw(document).ready(function() {
 			});
 		}
 		
-	});	
+	});	
 	
 });
 
