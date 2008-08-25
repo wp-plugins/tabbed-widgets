@@ -3,7 +3,7 @@
 Plugin Name: Tabbed Widgets
 Plugin URI: http://wordpress.org/extend/plugins/tabbed-widgets/
 Description: Place widgets into tabbed and accordion type interface blocks. Configuration options are available under <em>Design &raquo; <a href="themes.php?page=tabbed-widgets.php">Tabbed Widgets</a></em>.
-Version: 0.71
+Version: 0.72
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com/blog/
 
@@ -57,16 +57,23 @@ class tabbedWidgets {
 	
 	function saveWidgets() {
 		global $wp_registered_widgets;
+		$this->stored_widgets = array();
 		
-		// Save original widgets
-		$this->stored_widgets = $wp_registered_widgets;
+		if (!is_array($wp_registered_widgets) || !empty($wp_registered_widgets)) {
+			// Save original widgets, except the self		
+			foreach ($wp_registered_widgets as $widget_id => $widget_data) {
+				if (strpos($widget_id, 'tabbed-widget') === false) {
+					$this->stored_widgets[$widget_id] = $widget_data;
+				}
+			}
+		}
 		
 		// Tabbed Widget settings will be altered only from the admin, save resources
 		if (is_admin() && $_GET['page'] == 'tabbed-widgets.php') {
 			// Save widgets that are currently active
 			$this->active_widgets = $this->get_active_widgets();
 			// Save it in our own row, as other plugins might take it over when we need it. Like widget context plugin, for example.
-			update_option($this->tw_original_widgets, $wp_registered_widgets);
+			update_option($this->tw_original_widgets, $this->stored_widgets);
 		}
 	}
 
@@ -250,6 +257,7 @@ class tabbedWidgets {
 		// This should never happen, but lets make sure it exists
 		if (empty($this->tabbed_widget_content)) 
 			$this->tabbed_widget_content = get_option($this->tw_options_name);
+			
 		if (empty($this->stored_widgets)) 
 			$this->stored_widgets = get_option($this->tw_original_widgets);
 		
