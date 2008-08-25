@@ -3,7 +3,7 @@
 Plugin Name: Tabbed Widgets
 Plugin URI: http://wordpress.org/extend/plugins/tabbed-widgets/
 Description: Place widgets into tabbed and accordion type interface blocks. Configuration options are available under <em>Design &raquo; <a href="themes.php?page=tabbed-widgets.php">Tabbed Widgets</a></em>.
-Version: 0.7
+Version: 0.71
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com/blog/
 
@@ -35,7 +35,8 @@ class tabbedWidgets {
 		
 		if (!$printjsvars) {
 			// Save original widget callbacks in case some other plugin takes control over
-			add_action('widgets_init', array($this, 'initProcedures'));
+			add_action('widgets_init', array($this, 'addInvisibleSidebar'));
+			add_action('admin_menu', array($this, 'saveWidgets'));
 			add_action('admin_menu', array($this, 'addOptionsPage'));
 			add_action('wp_head', array($this, 'addHeader'), 1);
 			add_action('plugins_loaded', array($this, 'registerWidgets'), 2);
@@ -45,20 +46,23 @@ class tabbedWidgets {
 	}
 	
 	
-	function initProcedures() {
-		global $wp_registered_widgets;
-		
+	function addInvisibleSidebar() {
 		// Add an invisible sidebar for placing widgets that would be only used inside tabbed interface.
 		if (function_exists('register_sidebar')) {
 			// Add widgetized area for placing and configuring widgets that are going to be used in tabbed widgets.
 		    register_sidebar(array('name' => 'Invisible Widget Area'));
-		}
+		}	
+	}
+	
+	
+	function saveWidgets() {
+		global $wp_registered_widgets;
 		
 		// Save original widgets
 		$this->stored_widgets = $wp_registered_widgets;
 		
 		// Tabbed Widget settings will be altered only from the admin, save resources
-		if (is_admin()) {
+		if (is_admin() && $_GET['page'] == 'tabbed-widgets.php') {
 			// Save widgets that are currently active
 			$this->active_widgets = $this->get_active_widgets();
 			// Save it in our own row, as other plugins might take it over when we need it. Like widget context plugin, for example.
@@ -659,7 +663,8 @@ class tabbedWidgets {
 					
 						ob_start();
 							call_user_func_array($widget_callback, $all_params);
-						$widget_title = ob_get_clean();
+							$widget_title = ob_get_clean();
+						ob_end_clean();
 						
 						$find_fn_pattern = '/\[\[(.*?)\]\]/';
 						preg_match_all($find_fn_pattern, $widget_title, $result);
