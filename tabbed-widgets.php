@@ -3,7 +3,7 @@
 Plugin Name: Tabbed Widgets
 Plugin URI: http://wordpress.org/extend/plugins/tabbed-widgets/
 Description: Place widgets into tabbed and accordion type interface blocks. Configuration options are available under <em>Design &raquo; <a href="themes.php?page=tabbed-widgets.php">Tabbed Widgets</a></em>.
-Version: 0.72
+Version: 0.73-fix1
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com/blog/
 
@@ -11,8 +11,9 @@ Thanks for the suggestions to Ronald Huereca.
 */
 
 class tabbedWidgets {
+	var $debbug_enabled = true;
 	
-	var $donot_list_without_config = array('categories-1', 'text', 'rss-1');
+	var $donot_list_without_config = array('categories-1', 'text-1', 'rss-1');
 	var $tw_options_name = 'tabbed_widgets_options';
 	var $tw_original_widgets = 'tabbed_widgets_originals';
 	var $tabbed_widget_content = array();
@@ -437,10 +438,17 @@ class tabbedWidgets {
 
 	
 	function printAdminOptions() {
-		
+			
 		if($_POST['tw_options_submitted'] == 'y') {
 			update_option($this->tw_options_name, $_POST['tw']);
 			$ifupdated = '<div id="message" class="updated fade"><p><strong>' . __('Options saved.') . '</strong></p></div>';
+		}
+		
+		if (empty($this->active_widgets)) {
+			$notice = '<p class="updated">Notice: List of active widgets is empty. Creating it with <code>$this->get_active_widgets()</cide> now.</p>';
+			$this->active_widgets = $this->get_active_widgets();
+		} else {
+			$notice = '<p class="updated">Notice: List of active widgets is OK.</p>';
 		}
 		
 		$tw_options = get_option($this->tw_options_name);
@@ -450,6 +458,8 @@ class tabbedWidgets {
 			. wp_nonce_field('update-options')
 			. '<h2>Tabbed Widget Settings</h2>';
 		
+		if ($this->debbug_enabled) $options .= $notice;
+			
 		$options .= $this->makeDonate();	
 		$options .= '<fieldset>'
 			 . '<div><p>' . $this->makeDefaultRotateOption($tw_options) . '</p></div>'
@@ -646,7 +656,8 @@ class tabbedWidgets {
 		global $wp_registered_sidebars;
 		
 		$visible_widgets = wp_get_sidebars_widgets();
-		$sidebars = array_values($wp_registered_sidebars);
+		$sidebar_params = array_values($wp_registered_sidebars);
+		$sidebar_params = $sidebar_params[0];
 		
 			foreach ($this->stored_widgets as $widget_id => $widget_data) {
 			
@@ -661,22 +672,19 @@ class tabbedWidgets {
 						$widget_params = $widget_params[0];
 					}
 					
-					$sidebar_params = $sidebars[0];
 					$sidebar_params['before_title'] = '[[';
 					$sidebar_params['after_title'] = ']]';
 					
 					$all_params = array_merge(array($sidebar_params), (array)$widget_params);					
 					
-					if (is_callable($widget_callback) && strpos($widget_id, 'wl-clone') === false && !empty($widget_name)) {
+					if (is_callable($widget_callback) && !is_integer(strpos($widget_id, 'wl-clone')) && !empty($widget_name)) {
 					
 						ob_start();
 							call_user_func_array($widget_callback, $all_params);
-							$widget_title = ob_get_clean();
-						ob_end_clean();
+						$widget_title = ob_get_clean();
 						
 						$find_fn_pattern = '/\[\[(.*?)\]\]/';
 						preg_match_all($find_fn_pattern, $widget_title, $result);
-						
 						$got_title = strip_tags(trim((string)$result[1][0]));
 						
 						if (!empty($got_title) && $got_title !== '') {
@@ -684,11 +692,10 @@ class tabbedWidgets {
 						} else {
 							$widget_title = $widget_name;
 						}
-						
 					} else {
 						$widget_title = $widget_name;
 					}
-				
+					
 					$out[$widget_id] = $widget_title;
 				}
 			}
