@@ -3,7 +3,7 @@
 Plugin Name: Tabbed Widgets
 Plugin URI: http://wordpress.org/extend/plugins/tabbed-widgets/
 Description: Place widgets into tabbed and accordion type interface blocks. Configuration options are available under <em>Design &raquo; <a href="themes.php?page=tabbed-widgets.php">Tabbed Widgets</a></em>.
-Version: 0.73
+Version: 0.73-fix3
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com/blog/
 
@@ -34,13 +34,19 @@ class tabbedWidgets {
 		if (!defined('WP_CONTENT_URL')) define('WP_CONTENT_URL', get_option('siteurl') . '/wp-content'); // Pre-2.6 compatibility
 		$this->plugin_path = WP_CONTENT_URL . '/plugins/'. plugin_basename(dirname(__FILE__)) . '/';
 		
-		if (!$printjsvars) {
-			// Save original widget callbacks in case some other plugin takes control over
+		if (!$printjsvars) {			
+			
 			add_action('widgets_init', array($this, 'addInvisibleSidebar'));
-			add_action('admin_menu', array($this, 'saveWidgets'));
+			// Save original widget callbacks in case some other plugin takes control over
+			add_action('widgets_init', array($this, 'saveWidgets'));
 			add_action('admin_menu', array($this, 'addOptionsPage'));
 			add_action('wp_head', array($this, 'addHeader'), 1);
-			add_action('plugins_loaded', array($this, 'registerWidgets'), 2);
+			add_action('plugins_loaded', array($this, 'registerWidgets')); 
+			
+			if (empty($this->tabbed_widget_content)) {
+				$this->tabbed_widget_content = get_option($this->tw_options_name);
+			}
+			
 		} else {
 			$this->printJsVars();	
 		}
@@ -59,7 +65,7 @@ class tabbedWidgets {
 	function saveWidgets() {
 		global $wp_registered_widgets;
 		$this->stored_widgets = array();
-		
+
 		if (!is_array($wp_registered_widgets) || !empty($wp_registered_widgets)) {
 			// Save original widgets, except the self		
 			foreach ($wp_registered_widgets as $widget_id => $widget_data) {
@@ -70,11 +76,15 @@ class tabbedWidgets {
 		}
 		
 		// Tabbed Widget settings will be altered only from the admin, save resources
-		if (is_admin() && $_GET['page'] == 'tabbed-widgets.php') {
-			// Save widgets that are currently active
-			$this->active_widgets = $this->get_active_widgets();
+		if (is_admin() && $_GET['page'] == 'tabbed-widgets.php') {		
+			
 			// Save it in our own row, as other plugins might take it over when we need it. Like widget context plugin, for example.
 			update_option($this->tw_original_widgets, $this->stored_widgets);
+				
+			if (empty($this->active_widgets)) {
+				// Save widgets that are currently active
+				$this->active_widgets = $this->get_active_widgets();
+			}
 		}
 	}
 
@@ -208,7 +218,7 @@ class tabbedWidgets {
 	function registerWidgets() {
 		if (!function_exists('wp_register_sidebar_widget')) return;
 		
-		if (empty($this->tabbed_widget_content)) 
+		if (empty($this->tabbed_widget_content))
 			$this->tabbed_widget_content = get_option($this->tw_options_name);
 		
 		$tw_options = $this->tabbed_widget_content;
@@ -231,7 +241,7 @@ class tabbedWidgets {
 				
 				$register_widget_id = 'tabbed-widget-' . $count;
 
-				$unregisterall = 0;			
+				$unregisterall = false;			
 				if ($unregisterall) {
 					register_sidebar_widget($name, '');
 					register_widget_control($name, '');
@@ -445,10 +455,8 @@ class tabbedWidgets {
 		}
 		
 		if (empty($this->active_widgets)) {
-			$notice = '<p class="updated">Notice: List of active widgets is empty. Creating it with <code>$this->get_active_widgets()</cide> now.</p>';
+			$notice = '<p class="updated">Notice: List of active widgets is empty. Creating it with <code>$this->get_active_widgets()</cide> now. Do you see anything in the drop-drown list of widgets?</p>';
 			$this->active_widgets = $this->get_active_widgets();
-		} else {
-			$notice = '<p class="updated">Notice: List of active widgets is OK.</p>';
 		}
 		
 		$tw_options = get_option($this->tw_options_name);
@@ -528,21 +536,24 @@ class tabbedWidgets {
 		
 		$list = '<label class="tw-in-widget-list"><select name="tw[' . $id . '][widgets][]">';	
 		$list .= '<option></option>';
-		$active_widgets = $this->active_widgets;
 		
-		foreach ($active_widgets as $widget => $value) {
-			
-			if (!empty($options)) {
-				if ($options[$id]['widgets'][$count-1] == $widget) {
-					$selected = 'selected="selected"';
-				} else {
-					$selected = '';
+		if (!empty($this->active_widgets)) {
+			foreach ($this->active_widgets as $widget => $value) {
+				
+				if (!empty($options)) {
+					if ($options[$id]['widgets'][$count-1] == $widget) {
+						$selected = 'selected="selected"';
+					} else {
+						$selected = '';
+					}
+				}
+				
+				if (strpos($widget, 'tabbed-widget') === false && strpos($widget, 'wl-clone') === false) {
+					$list .= '<option value="' . $widget . '" ' . $selected . '>' . $value . '</option>';
 				}
 			}
-			
-			if (strpos($widget, 'tabbed-widget') === false && strpos($widget, 'wl-clone') === false) {
-				$list .= '<option value="' . $widget . '" ' . $selected . '>' . $value . '</option>';
-			}
+		} else {
+			$list .= '<option value="error" selected="selected">Widget List Empty (error no.1)</option>';
 		}
 		
 		$list .= '</select></label>';
@@ -681,7 +692,8 @@ class tabbedWidgets {
 					
 						ob_start();
 							call_user_func_array($widget_callback, $all_params);
-						$widget_title = ob_get_clean();
+							$widget_title = ob_get_contents();
+						ob_end_clean();
 						
 						$find_fn_pattern = '/\[\[(.*?)\]\]/';
 						preg_match_all($find_fn_pattern, $widget_title, $result);
