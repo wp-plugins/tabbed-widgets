@@ -3,7 +3,7 @@
 Plugin Name: Tabbed Widgets
 Plugin URI: http://wordpress.org/extend/plugins/tabbed-widgets/
 Description: Place widgets into tabbed and accordion type interface blocks. Configuration options are available under <em>Design &raquo; <a href="themes.php?page=tabbed-widgets.php">Tabbed Widgets</a></em>.
-Version: 0.75
+Version: 0.76
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com/blog/
 

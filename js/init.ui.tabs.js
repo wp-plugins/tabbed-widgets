@@ -94,6 +94,12 @@ $tw(document).ready(function() {
 			
 			// count the number of tabs
 			var $tabs = $tw('.tw-widgettitle', $this_acco).length;
+
+			if ($start_tab > 0) {
+				var $set_start_tab = $start_tab - 1;
+			} else {
+				var $set_start_tab = 0;
+			}
 			
 			// choose start tab, see if random is selected
 			if ($random_start) {
