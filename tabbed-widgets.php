@@ -3,7 +3,7 @@
 Plugin Name: Tabbed Widgets
 Plugin URI: http://wordpress.org/extend/plugins/tabbed-widgets/
 Description: Place widgets into tabbed and accordion type interface blocks. Configuration options are available under <em>Design &raquo; <a href="themes.php?page=tabbed-widgets.php">Tabbed Widgets</a></em>.
-Version: 0.73-fix3
+Version: 0.74
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com/blog/
 
@@ -44,6 +44,7 @@ class tabbedWidgets {
 			add_action('plugins_loaded', array($this, 'registerWidgets')); 
 			
 			if (empty($this->tabbed_widget_content)) {
+				// Get tabbed widget settings
 				$this->tabbed_widget_content = get_option($this->tw_options_name);
 			}
 			
@@ -64,7 +65,6 @@ class tabbedWidgets {
 	
 	function saveWidgets() {
 		global $wp_registered_widgets;
-		$this->stored_widgets = array();
 
 		if (!is_array($wp_registered_widgets) || !empty($wp_registered_widgets)) {
 			// Save original widgets, except the self		
@@ -217,9 +217,13 @@ class tabbedWidgets {
 	
 	function registerWidgets() {
 		if (!function_exists('wp_register_sidebar_widget')) return;
-		
-		if (empty($this->tabbed_widget_content))
+
+		// This should never happen, but lets make sure it exists
+		if (empty($this->tabbed_widget_content)) 
 			$this->tabbed_widget_content = get_option($this->tw_options_name);
+			
+		if (empty($this->stored_widgets)) 
+			$this->stored_widgets = get_option($this->tw_original_widgets);
 		
 		$tw_options = $this->tabbed_widget_content;
 		$options_count = count($tw_options);
@@ -264,13 +268,6 @@ class tabbedWidgets {
 	
 	function outputTabbedWidget($defargs) {
 		global $wp_registered_sidebars, $wp_registered_widgets;
-		
-		// This should never happen, but lets make sure it exists
-		if (empty($this->tabbed_widget_content)) 
-			$this->tabbed_widget_content = get_option($this->tw_options_name);
-			
-		if (empty($this->stored_widgets)) 
-			$this->stored_widgets = get_option($this->tw_original_widgets);
 		
 		// Get widget data for the widgets inside
 		$tabbed_widgetdata = $wp_registered_widgets[$defargs['widget_id']];
@@ -455,7 +452,7 @@ class tabbedWidgets {
 		}
 		
 		if (empty($this->active_widgets)) {
-			$notice = '<p class="updated">Notice: List of active widgets is empty. Creating it with <code>$this->get_active_widgets()</cide> now. Do you see anything in the drop-drown list of widgets?</p>';
+			// this happens only if PHP < 5
 			$this->active_widgets = $this->get_active_widgets();
 		}
 		
@@ -670,48 +667,54 @@ class tabbedWidgets {
 		$sidebar_params = array_values($wp_registered_sidebars);
 		$sidebar_params = $sidebar_params[0];
 		
-			foreach ($this->stored_widgets as $widget_id => $widget_data) {
+		if (empty($this->stored_widgets)) {
+			// this happens only in PHP 4.4.6
+			$this->stored_widgets = get_option($this->tw_original_widgets);
+		}
+		
+		foreach ($this->stored_widgets as $widget_id => $widget_data) {
+		
+			$widget_name = $widget_data['name'];
+			$widget_params = $widget_data['params'];
+			$widget_callback = $widget_data['callback'];
 			
-				$widget_name = $widget_data['name'];
-				$widget_params = $widget_data['params'];
-				$widget_callback = $widget_data['callback'];
+			if (in_array($widget_id, $visible_widgets) || !in_array($widget_id, $this->donot_list_without_config)) { 
+			
+				// if parameter is a string
+				if (isset($widget_params[0]) && !is_array($widget_params[0])) {
+					$widget_params = $widget_params[0];
+				}
 				
-				if (in_array($widget_id, $visible_widgets) || !in_array($widget_id, $this->donot_list_without_config)) { 
+				$sidebar_params['before_title'] = '[[';
+				$sidebar_params['after_title'] = ']]';
 				
-					// if parameter is a string
-					if (isset($widget_params[0]) && !is_array($widget_params[0])) {
-						$widget_params = $widget_params[0];
-					}
+				$all_params = array_merge(array($sidebar_params), (array)$widget_params);					
+				
+				if (is_callable($widget_callback) && !is_integer(strpos($widget_id, 'wl-clone')) && !empty($widget_name)) {
+				
+					ob_start();
+						call_user_func_array($widget_callback, $all_params);
+						$widget_title = ob_get_contents();
+					ob_end_clean();
 					
-					$sidebar_params['before_title'] = '[[';
-					$sidebar_params['after_title'] = ']]';
+					$find_fn_pattern = '/\[\[(.*?)\]\]/';
+					preg_match_all($find_fn_pattern, $widget_title, $result);
+					$got_title = strip_tags(trim((string)$result[1][0]));
 					
-					$all_params = array_merge(array($sidebar_params), (array)$widget_params);					
-					
-					if (is_callable($widget_callback) && !is_integer(strpos($widget_id, 'wl-clone')) && !empty($widget_name)) {
-					
-						ob_start();
-							call_user_func_array($widget_callback, $all_params);
-							$widget_title = ob_get_contents();
-						ob_end_clean();
-						
-						$find_fn_pattern = '/\[\[(.*?)\]\]/';
-						preg_match_all($find_fn_pattern, $widget_title, $result);
-						$got_title = strip_tags(trim((string)$result[1][0]));
-						
-						if (!empty($got_title) && $got_title !== '') {
-							$widget_title = $widget_name . ': ' . $got_title;
-						} else {
-							$widget_title = $widget_name;
-						}
+					if (!empty($got_title) && $got_title !== '') {
+						$widget_title = $widget_name . ': ' . $got_title;
 					} else {
 						$widget_title = $widget_name;
 					}
 					
-					$out[$widget_id] = $widget_title;
+				} else {
+					$widget_title = $widget_name;
 				}
+			
+				$out[$widget_id] = $widget_title;
 			}
-
+		}
+		
 		return $out;
 	}
 
