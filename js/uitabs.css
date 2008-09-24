@@ -1,0 +1,68 @@
+.tw-rotate { float:left; margin:0 0 1em 0; padding:0; width:100%; position:relative; top:-4px; }
+.tw-hide { display:none; }
+.without_title { margin-top:1.25em; }
+.ui-tabs-nav, .ui-tabs-panel { float:left; width:100%; clear:both; }
+.tw-tabbed-widgets, #sidebar .tw-tabbed-widgets { margin:0; padding:0; float:left; width:100%; }
+
+
+/* tabs */
+ul.tw-nav-list, #sidebar ul.tw-nav-list { list-style: none; float:left; width:100%; margin:0; padding:0; }
+ul.tw-nav-list li, #sidebar ul.tw-nav-list li { list-style:none; list-style-image:none; display:block; float:left; clear:none; margin:0 2px 0 0; padding:0 0 3px 0;  }
+ul.tw-nav-list li:before, #sidebar ul.tw-nav-list li:before, #sidebar li.widget:before { content:''; }
+ul.tw-nav-list a, #sidebar ul.tw-nav-list a { font-weight:bold; float:left; width:auto; padding:0.45em 0.6em 0.55em; color:#333; background: #eee url('../images/accordion-darker-bar.png') repeat-x left top; }
+ul.tw-nav-list a:hover, #sidebar ul.tw-nav-list a:hover { text-decoration:underline; color:#000; background-color:#ddd;  }
+ul.tw-nav-list li.ui-tabs-selected, #sidebar ul.tw-nav-list li.ui-tabs-selected  { background: transparent url('../images/tabs-under.png') no-repeat -8px bottom; padding-bottom:3px; }
+ul.tw-nav-list li.ui-tabs-selected a, #sidebar ul.tw-nav-list li.ui-tabs-selected a,
+ul.tw-nav-list li.ui-tabs-selected a:hover, #sidebar li.ui-tabs-selected a:hover { background:#333; color:#fff; text-decoration:none; font-weight:bold; }
+.ui-tabs-panel, #sidebar .ui-tabs-panel { margin:0 0 1em 0; padding:0.75em 0 1em 0; float:left; width:100%; }
+#sidebar .without_title { margin-top:0; }
+* html #sidebar li.widget { float:left; margin-bottom:1em; }
+* html #sidebar .ui-tabs-panel { float:none; } 
+
+/* accordion  */
+.tw-accordion { float:left; width:100%; padding:0; margin:0; }
+.tw-accordion .tabbed-widget-item { float:left; width:100%; margin:0; padding:0; overflow:hidden; }
+.tw-accordion .tw-widgettitle { font-size:1.1em; background:#eee; display:block; float:left; width:100%; padding:0.45em 0 0.45em 0; margin:2px 0 0 0; cursor: pointer; }
+.tw-accordion .tw-widgettitle span { display:block; padding:0 0.75em; background: transparent url('../images/accordion-collapsed.png') no-repeat 95% 50%; cursor: pointer; }
+.tw-accordion .tw-widgettitle:hover, .tw-accordion .tw-hovered { background: #ddd url('../images/accordion-darker-bar.png') repeat-x left top; }
+.tw-accordion .selected, .tw-accordion .selected:hover { cursor: text; background: #ddd url('../images/accordion-darker-bar.png') repeat-x left top; }
+.tw-accordion .selected span, .tw-accordion .selected:hover span { cursor: text; background: transparent url('../images/accordion-active.png') no-repeat 95% 50%; }
+.tw-accordion .selected span { text-decoration:none; }
+.tw-accordion .widget { margin-bottom:0; padding:0.5em 0 1.5em 0; }
+
+.tw-accordion .tw-first { border:none; }
+.tw-accordion .tw-last { }
+
+/* defaults for the default theme */
+#sidebar ul.tw-nav-list ul li:before { content:''; }
+#sidebar ul.tw-nav-list { font-size:1.1em; }
+#sidebar .tw-accordion .tw-widgettitle { padding:0.55em 0 0.6em; }
+#sidebar .tw-accordion ul.tabbed-widget-item { margin:0.75em 0 1.25em 0; padding:0; list-style-image:none; }
+#sidebar .tw-accordion ul.tabbed-widget-item li.widget:before { content:''; display:none; }
+#sidebar .tw-accordion .widget { margin:0; }
+#sidebar .tw-accordion { margin-bottom:2em; margin-top:0; }
+* html #sidebar .tw-accordion .tw-widgettitle { font-size:1.1em; float:none; }
+
+.ui-tabs-nav .ui-tabs-selected a:link, .ui-tabs-nav .ui-tabs-selected a:visited, .ui-tabs-nav .ui-tabs-disabled a:link, .ui-tabs-nav .ui-tabs-disabled a:visited { 
+	/* @ Opera, use pseudo classes otherwise it confuses cursor... */
+    cursor: text;
+}
+.ui-tabs-nav a:hover, .ui-tabs-nav a:focus, .ui-tabs-nav a:active,
+.ui-tabs-nav .ui-tabs-unselect a:hover, .ui-tabs-nav .ui-tabs-unselect a:focus, .ui-tabs-nav .ui-tabs-unselect a:active { 
+	/* @ Opera, we need to be explicit again here now... */
+    cursor: pointer;
+}
+
+/* Caution! Ensure accessibility in print and other media types... */
+@media projection, screen { /* Use class for showing/hiding tab content, so that visibility can be better controlled in different media types... */
+    .ui-tabs-hide {
+        display: none;
+    }
+}
+
+/* Hide useless elements in print layouts... */
+@media print {
+	.tw-rotate { margin:0; }
+    ul.tw-nav-list { display: none; }
+    .tw-hide, .tw-rotate h1, .tw-rotate h2, .tw-rotate h3, .tw-rotate h4 { display:inherit; }
+}
