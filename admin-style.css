@@ -1,0 +1,28 @@
+/* D6E8F5   	EAF3FA */
+
+.widget-context { width:64em; float:right; clear:both; margin-bottom:1em; background:#eee; }
+.widget-context-inside { float:left; clear:both; padding:1em 2em 1em 1em; border:1px solid #ccc; border-top-width:thick; margin:1em 0 1em 1em; }
+
+.widget-context h5 { font-size:1.1em; margin:0; float:left; }
+.widget-context .wl-header { float:left; width:100%; clear:both; margin-bottom:1em; border-bottom:2px solid #ccc; }
+
+.widget-context .wl-wrap-columns { float:left; width:100%; clear:both; }
+
+.wl-columns { float:left; width:34%; padding-top:0.5em; }
+.wl-columns input { vertical-align:middle; }
+.wl-column-2-1 { float:left; width:47%; }
+.wl-column-2-2 { float:right; width:52%; }
+.wl-columns label { display:block; }
+li.widget-list-control-item div.widget-control p.wl-visibility { float:left; }
+
+.tw-in-widget-list select { width:100%; }
+.wl-options { float:right; width:60%; }
+.wl-options .wl-urls { clear:both; }
+.wl-options .wl-urls textarea { width:100%; height:6em; font-size:0.96em; }
+.wl-tip { font-size:0.9em; line-height:1.25em; }
+.wl-visibility input { vertical-align:middle; }
+.wl-visibility label { margin-left:1em; }
+
+.wl-notes { float:left; width:100%; clear:both; }
+.wl-notes textarea { float:left; width:100%; clear:both; height:3.5em; font-size:1em; }
+
