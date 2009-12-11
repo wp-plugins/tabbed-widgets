@@ -2,11 +2,11 @@
 Contributors: kasparsd
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kaspars%40konstruktors%2ecom&item_name=Tabbed%20Widgets%20Plugin%20for%20WordPress&no_shipping=1&no_note=1&tax=0&currency_code=EUR&lc=LV&bn=PP%2dDonationsBF&charset=UTF%2d8
 Tags: widget, widgets, tabs, tabbed widgets, accordion, sidebar, ui
-Requires at least: 2.5
-Tested up to: 2.6.1
-Stable tag: 0.77
+Requires at least: 2.8
+Tested up to: 2.9
+Stable tag: 0.81
 
-Put widgets into tabbed or accordion interface without writing a single line of code. 
+Put widgets into tabbed or accordion interface without writing a single line of code.
 
 == Description ==
 
@@ -36,13 +36,14 @@ final directory tree should look like `/wp-content/plugins/tabbed-widgets/tabbed
 
 3.    Activate the plugin at the Plugin Management section under ‘Plugins’ menu.
 
-4.    To create a tabbed widget, go to ‘Design’ > ‘Tabbed Widgets’.
+4.    To create a tabbed widget under Widget Management.
 
 
 == Other Notes ==
 
 = Changelog =
 
+*	**0.81**: Added support for 2.8+; Updated Javascript, simplified interface.
 *	**0.76** and **0.77**: Bug fix: Selected start tab was not opened for accordion type widgets.
 *	**0.74**: Fixed active widget list creation error for PHP 4.3.6 users. It turned out that $this->tabbed_widget_content doesn't get passed around from class init to child functions. Could be a WP issue as well.
 *	**0.73**: Bug fix: removed the extra ob_end_clean which was clearing the widget titles from the settings page drop-down selection.
@@ -62,6 +63,6 @@ Overwrite the default CSS rules (see `js/uitabs.css`) at the end of your theme's
 
 == Screenshots ==
 
-1. Tabbed Widget Settings
+1. Widget Settings
 2. Tab style widget
 3. Accordion style widget

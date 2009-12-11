@@ -2,59 +2,58 @@
 /*
 Plugin Name: Tabbed Widgets
 Plugin URI: http://wordpress.org/extend/plugins/tabbed-widgets/
-Description: Place widgets into tabbed and accordion type interface blocks. Configuration options are available under <em>Design &raquo; <a href="themes.php?page=tabbed-widgets.php">Tabbed Widgets</a></em>.
-Version: 0.77
+Description: Place widgets into tabbed and accordion type interface.
+Version: 0.81
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com/blog/
 
 Thanks for the suggestions to Ronald Huereca.
 */
 
+// Option row where we store widget copies, as other plugins (such as widget context) might take them over
+define('ORIGINAL_WIDGETS', 'tabbed_widgets_originals');
+
+// Necessary for the js to work
+$root = dirname(dirname(dirname(dirname(__FILE__))));
+if (file_exists($root . '/wp-load.php')) {
+	require_once($root . '/wp-load.php'); // WP 2.6
+} else {
+	require_once($root . '/wp-config.php'); // Before 2.6
+}
+
+// Start the engine
+if (isset($_GET['returnjs']))
+	new tabbedWidgets(true); // Return JS
+else
+	new tabbedWidgets();
+
+
 class tabbedWidgets {
 	var $debbug_enabled = true;
-	
-	var $donot_list_without_config = array('categories-1', 'text-1', 'rss-1');
-	var $tw_options_name = 'tabbed_widgets_options';
-	var $tw_original_widgets = 'tabbed_widgets_originals';
 	var $tabbed_widget_content = array();
 	var $stored_widgets = array();
-	var $tw_available = 8;
-	var $tabs_per_tw = 6;
-	var $defaultRotateInterval = 7;
 	var $plugin_path = '';
 	
-	var $active_widgets = array();
-	var $registered_widgets = array();
-	var $tw_array = array();
-	var $styles_called = array();
-	
-	
 	function tabbedWidgets($printjsvars = false) {
-		
-		if (!defined('WP_CONTENT_URL')) define('WP_CONTENT_URL', get_option('siteurl') . '/wp-content'); // Pre-2.6 compatibility
+		if (!defined('WP_CONTENT_URL')) 
+			define('WP_CONTENT_URL', get_option('siteurl') . '/wp-content'); // Pre-2.6 compatibility
+			
 		$this->plugin_path = WP_CONTENT_URL . '/plugins/'. plugin_basename(dirname(__FILE__)) . '/';
 		
-		if (!$printjsvars) {			
-			
-			add_action('widgets_init', array($this, 'addInvisibleSidebar'));
-			// Save original widget callbacks in case some other plugin takes control over
-			add_action('widgets_init', array($this, 'saveWidgets'));
+		if (!$printjsvars) {
+			add_action('widgets_init', array($this, 'initSidebarAndWidget'), 1);
+			add_action('sidebar_admin_setup', array($this, 'saveWidgets'), 1); // Save it in our own row, as other plugins might take it over when we need it. Like widget context plugin, for example.
 			add_action('admin_menu', array($this, 'addOptionsPage'));
 			add_action('wp_head', array($this, 'addHeader'), 1);
-			add_action('plugins_loaded', array($this, 'registerWidgets')); 
-			
-			if (empty($this->tabbed_widget_content)) {
-				// Get tabbed widget settings
-				$this->tabbed_widget_content = get_option($this->tw_options_name);
-			}
-			
-		} else {
+		} elseif ($printjsvars) {
 			$this->printJsVars();	
 		}
 	}
 	
-	
-	function addInvisibleSidebar() {
+	function initSidebarAndWidget() {
+		// Init tabbed widgets
+		register_widget('tabbedWidgetWidget');
+		
 		// Add an invisible sidebar for placing widgets that would be only used inside tabbed interface.
 		if (function_exists('register_sidebar')) {
 			// Add widgetized area for placing and configuring widgets that are going to be used in tabbed widgets.
@@ -62,365 +61,287 @@ class tabbedWidgets {
 		}	
 	}
 	
-	
 	function saveWidgets() {
 		global $wp_registered_widgets;
-
-		if (!is_array($wp_registered_widgets) || !empty($wp_registered_widgets)) {
-			// Save original widgets, except the self		
-			foreach ($wp_registered_widgets as $widget_id => $widget_data) {
-				if (strpos($widget_id, 'tabbed-widget') === false) {
-					$this->stored_widgets[$widget_id] = $widget_data;
+		
+		$sidebars_widgets = wp_get_sidebars_widgets(false);
+		
+		// Stored widgets include all default widget settings and function calls
+		if (is_array($sidebars_widgets) || !empty($sidebars_widgets)) {
+			foreach ($sidebars_widgets as $sidebar_id => $widgets) {
+				if (!empty($widgets)) {
+					foreach ($widgets as $widget_id) {
+						// Save original widgets, except the self	
+						if (strpos($widget_id, 'tabbed-widget') === false) {
+							$this->stored_widgets[$widget_id] = $wp_registered_widgets[$widget_id];
+							$this->stored_widgets[$widget_id]['titles'] = $this->get_widget_titles($wp_registered_widgets[$widget_id]);
+						}
+					}
 				}
 			}
-		}
-		
-		// Tabbed Widget settings will be altered only from the admin, save resources
-		if (is_admin() && $_GET['page'] == 'tabbed-widgets.php') {		
-			
-			// Save it in our own row, as other plugins might take it over when we need it. Like widget context plugin, for example.
-			update_option($this->tw_original_widgets, $this->stored_widgets);
-				
-			if (empty($this->active_widgets)) {
-				// Save widgets that are currently active
-				$this->active_widgets = $this->get_active_widgets();
-			}
+			update_option(ORIGINAL_WIDGETS, $this->stored_widgets);
 		}
 	}
-
+	
+	function get_widget_titles($widget_data) {
+		$widget_name = $widget_data['name'];
+		$widget_params = $widget_data['params'];
+		$widget_callback = $widget_data['callback'];
+		
+		// if parameter is a string
+		if (isset($widget_params[0]) && !is_array($widget_params[0])) {
+			$widget_params = $widget_params[0];
+		}
+		
+		$sidebar_params['before_title'] = '[[';
+		$sidebar_params['after_title'] = ']]';
+		$all_params = array_merge(array($sidebar_params), (array)$widget_params);					
+			
+		if (is_callable($widget_callback)) {
+			// Call widget to see its title
+			ob_start();
+				call_user_func_array($widget_callback, $all_params);
+				$widget_title = ob_get_contents();
+			ob_end_clean();
+			// Extract only title of the widget
+			$find_fn_pattern = '/\[\[(.*?)\]\]/';
+			preg_match_all($find_fn_pattern, $widget_title, $result);
+			$given_title = strip_tags(trim((string)$result[1][0]));
+		} else {
+			$widget_title = $widget_name;
+			$given_title = '';
+		}
+	
+		$out['original_title'] = $widget_name;
+		$out['given_title'] = $given_title;
+		
+		return $out;
+	}		
 
 	function addOptionsPage() {
-		$options_page = add_theme_page('Tabbed Widgets', 'Tabbed Widgets', 10, basename(__FILE__), array($this, 'printAdminOptions'));
-		add_action("admin_print_scripts-$options_page", array($this, 'addAdminCSS'), 1);
+		// $options_page = add_theme_page('Tabbed Widgets', 'Tabbed Widgets', 10, basename(__FILE__), array($this, 'printAdminOptions'));
+		add_action('admin_enqueue_scripts', array($this, 'addAdminCSS'));
 	}
-	
 	
 	function addHeader() {
-		
-		if (function_exists('wp_enqueue_script')) {
-
-			$tw_options = get_option($this->tw_options_name);
-
-			$libtitle = 'jquery';			
-			$add_tabs_js = false;
-
-			if (function_exists('get_avatar') && !class_exists('WP_Dependencies')) {
- 				// 2.5
-				$add_tabs_js = true;
- 				wp_enqueue_script('jquery');
-			} elseif (class_exists('WP_Dependencies')) { 
-				// 2.6 or up
-				wp_enqueue_script('jquery-ui-core');
-				wp_enqueue_script('jquery-ui-tabs');
-			} else {
- 				// 2.3
-				$libtitle = 'tw-jquery';
-				$add_tabs_js = true;
- 				wp_enqueue_script('tw-jquery',  $this->plugin_path . 'js/jquery-1.2.3.min.js', false, '1.2.3'); 
-			}
-			
-			// if 2.5 or below then add jQuery UI tabs scripts
-			if ($add_tabs_js) {
-				wp_enqueue_script('tw-tabs',  $this->plugin_path . 'js/jquery-ui-tabs.min.js', array($libtitle));
-			}
-
-			
-			// for accordion
-			wp_enqueue_script('tw-dimensions',  $this->plugin_path . 'js/jquery.dimensions.pack.js', array($libtitle));
-			wp_enqueue_script('tw-accordion',  $this->plugin_path . 'js/jquery.accordion.js', array($libtitle));
-			wp_enqueue_script('tw-easing',  $this->plugin_path . 'js/jquery.easing.js', array($libtitle));
-			
-			// check if rounded corners are enabled
-			if (!empty($tw_options['enable-rounded-corners'])) {
-				wp_enqueue_script('tw-cornerz',  $this->plugin_path . 'js/cornerz.js', array($libtitle));
-			}
-			
-			// init all
-			wp_enqueue_script('tw-init',  $this->plugin_path . basename(__FILE__) . '?returnjs=true', array($libtitle));
-		}
-		
-		// if (function_exists('wp_enqueue_style')) wp_enqueue_style('tabbed-widgets', $this->plugin_path . 'js/uitabs.css'); else
-		echo '<link type="text/css" rel="stylesheet" href="' . $this->plugin_path . 'js/uitabs.css" />' . "\n";
+		wp_enqueue_script('jquery');
+		wp_enqueue_script('jquery-ui-core');
+		wp_enqueue_script('jquery-ui-tabs');
+		wp_enqueue_script('jquery-ui-effects',  $this->plugin_path . 'js/jquery-ui-effects.min.js', array('jquery', 'jquery-ui-core'));
+		wp_enqueue_script('jquery-ui-accordion',  $this->plugin_path . 'js/jquery-ui-accordion.min.js', array('jquery', 'jquery-ui-core'));
+		wp_enqueue_script('jquery-ui-cookie',  $this->plugin_path . 'js/jquery-cookie.min.js', array('jquery'));
+		// init all
+		wp_enqueue_script('tabbed-widgets-init',  $this->plugin_path . basename(__FILE__) . '?returnjs=true', array('jquery', 'jquery-ui-tabs', 'jquery-ui-accordion'));
+		// Add Stylesheet
+		wp_enqueue_style('tabbed-widgets', $this->plugin_path . 'css/tabbed-widgets.css');
 	}
 
-
 	function addAdminCSS() {
-		echo '<link type="text/css" rel="stylesheet" href="' . $this->plugin_path . 'admin-style.css" />' . "\n";
+		wp_enqueue_style('tabbed-widgets-admin', $this->plugin_path . 'css/admin-style.css');
 	}	
 	
-
 	function printJsVars() {
-		$optionsvar = '$rotateoptions';
+		// Read tabbed widget options
+		$tw_options = get_option('widget_tabbed-widget');
 		
-		// read the tabs init file
-		$filename = dirname(__FILE__) . '/js/init.ui.tabs.js';
+		// read the tabs init js file
+		$filename = dirname(__FILE__) . '/js/init-plugin.js';
 		$handle = fopen($filename, "r");
 		$contents = fread($handle, filesize($filename));
 		fclose($handle);
 		
-		$tw_options = get_option($this->tw_options_name);
-		$options_count = count($tw_options);
-		if (empty($tw_options)) return;
-
-		if (!empty($tw_options['enable-rounded-corners'])) $rounded_corners = 'true';
-			else $rounded_corners = 'false';
-		
+		$optionsvar = '$rotateoptions';
 		$jsvars = 'var ' . $optionsvar . ' = new Array();' . "\n";
-		$jsvars .= 'var $tw_rounded_corners = ' . $rounded_corners . ";\n";
+		
+		foreach ($tw_options as $tw_id => $tw_settings) {
+			if (!is_numeric($tw_id))
+				break;
+				
+			$style = $tw_settings['style'];
+			$rotate = $tw_settings['rotate'];
+			$rotate_time = $tw_settings['rotate_time'];
+			$random_start = $tw_settings['random_start'];
+			$start_tab = $tw_settings['start_tab'];
+			
+			if (!empty($rotate)) 
+				$rotate = 1;
+			else 
+				$rotate = 0;
+			
+			if ($rotate && empty($rotate_time))
+				$rotate_time = 10000;
+			elseif ($rotate)
+				$rotate_time = intval($rotate_time * 1000);
+			
+			// Don't allow rotation times slower than 1 second.
+			if ($rotate_time < 1000)
+				$rotate_time = 1000;
+			
+			if (!empty($random_start)) 
+				$random_start = 1;
+			else 
+				$random_start = 0;
 
-		for ($count = 1; $count <= $options_count; $count++) {
-			
-			$style = $tw_options[$count]['style'];
-			$dorotate = $tw_options[$count]['rotate'];
-			$default_rotatetime = $tw_options['default_rotate_time'];
-			$rotatetime = $tw_options[$count]['rotatetime'];
-			$randomstart = $tw_options[$count]['randomstart'];
-			$start = $tw_options[$count]['start'];
-			
-			if (!empty($dorotate)) $dorotate = 'true';
-				else $dorotate = 'false';
-			
-			if (!empty($randomstart)) $randomstart = 'true';
-				else $randomstart = 'false';
-			
-			if ($dorotate && empty($rotatetime)) {
-				$rotatetime = $default_rotatetime;
-			}
-
-			$jsvars .= $optionsvar . '[' . $count . '] = new Array();' . "\n";
-			$jsvars .= $optionsvar . '[' . $count . ']["style"] = "' . $style . "\";\n";
-			$jsvars .= $optionsvar . '[' . $count . ']["rotate"] = ' . $dorotate . ";\n";
-			$jsvars .= $optionsvar . '[' . $count . ']["randomstart"] = ' . $randomstart . ";\n";
-
-			if (is_numeric($start) && $start !== 'default') {
-				$jsvars .= $optionsvar . '[' . $count . ']["start"] = ' . $start . ";\n";
-			}
-			
-			if (is_numeric($rotatetime)) {
-				$jsvars .= $optionsvar . '[' . $count . ']["interval"] = ' . $rotatetime . ";\n";
-			} else {
-				$jsvars .= $optionsvar . '[' . $count . ']["interval"] = false;' . "\n";     	
-     			}
+			$jsvars .= $optionsvar . '[' . $tw_id . '] = new Array();' . "\n";
+			$jsvars .= $optionsvar . '[' . $tw_id . ']["style"] = "' . $style . "\";\n";
+			$jsvars .= $optionsvar . '[' . $tw_id . ']["rotate"] = ' . $rotate . ";\n";
+			$jsvars .= $optionsvar . '[' . $tw_id . ']["random_start"] = ' . $random_start . ";\n";
+			$jsvars .= $optionsvar . '[' . $tw_id . ']["start_tab"] = ' . $start_tab . ";\n";			
+			$jsvars .= $optionsvar . '[' . $tw_id . ']["interval"] = ' . $rotate_time . ";\n";
 		}
 		
 		header('Content-type: application/x-javascript');
 		header('Pragma: private');
 		header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 31356000) . ' GMT');
-
 		header('Cache-Control: max-age=31356000, must-revalidate');
 		
 		print $jsvars . "\n";
 		print $contents;
-		
 	}
+}
 
+
+
+
+class tabbedWidgetWidget extends WP_Widget {
+	var $tw_options = array();
+	var $active_widgets = array();
 	
-	function registerWidgets() {
-		if (!function_exists('wp_register_sidebar_widget')) return;
-
-		// This should never happen, but lets make sure it exists
-		if (empty($this->tabbed_widget_content)) 
-			$this->tabbed_widget_content = get_option($this->tw_options_name);
-			
-		if (empty($this->stored_widgets)) 
-			$this->stored_widgets = get_option($this->tw_original_widgets);
+	function tabbedWidgetWidget() {
+		$widget_ops = array('classname' => 'tabbed-widget', 'description' => 'Place widgets inside a tabbed or an accordion type interface');
+		$control_ops = array('width' => 390, 'id_base' => 'tabbed-widget');
+		$this->WP_Widget('tabbed-widget', 'Tabbed Widget', $widget_ops, $control_ops);
 		
-		$tw_options = $this->tabbed_widget_content;
-		$options_count = count($tw_options);
+		if (empty($this->active_widgets))
+			$this->active_widgets = get_option(ORIGINAL_WIDGETS);
+	}
+	
+	function update($new_instance, $old_instance) {
+		$new_instance['rotate_time'] = trim($new_instance['rotate_time']);
+		if (!is_numeric($new_instance['rotate_time']))
+			$new_instance['rotate_time'] = '';
 		
-		if (empty($tw_options)) return;
-
-		for ($count = 1; $count <= $options_count; $count++) {
-			if (is_array($tw_options[$count]['widgets']))
-				$singlewidget = implode('', $tw_options[$count]['widgets']);
+		return $new_instance;
+		// return array();
+	}
+	
+	function form($instance) {			
+		$options .= '<div class="widget-wrapper">';
+		$options .= '<p class="tw-title">' . $this->makeTitleOption($instance, 'show_title', 'Show Title') . '<input type="text" name="' . $this->get_field_name('widget_title') . '" class="tw-widget-title" value="'. esc_attr($instance['widget_title']) .'" /></p>';
+		
+		$options .= '<p class="tw-style-type"><strong>'. __('Style as') .'</strong>: ';
+		$options .= '<span>' . $this->makeSimpleRadio($instance, 'style', 'tabs', __('tabs')) . ' '. __('or') .'</span> ';
+		$options .= '<span>' . $this->makeSimpleRadio($instance, 'style', 'accordion', __('accordion')) . '</span></p>';
+		$options .= '<p class="tw-widget-note">' . __('Place widget inside the <em>Invisible Widget Area</em> to make it available here.') . '</p>';
 			
-			if ($singlewidget !== '') {
-				
-				$dirtyname = 'Tabbed Widget ' . $count;
-				
-				if (empty($tw_options[$count]['title'])) 
-					$name = $dirtyname;
-				else 
-					$name = 'TW: ' . $tw_options[$count]['title'];
-				
-				$register_widget_id = 'tabbed-widget-' . $count;
-
-				$unregisterall = false;			
-				if ($unregisterall) {
-					register_sidebar_widget($name, '');
-					register_widget_control($name, '');
-				} elseif (function_exists('wp_register_sidebar_widget')) {
-					// wp_register_sidebar_widget($id, $name, $output_callback, $options = array())
-			    	wp_register_sidebar_widget(
-						$register_widget_id, 
-						$name, 
-						array($this, 'outputTabbedWidget'),
-						array('classname' => 'tabbed-widget')
-					);
-				} else {
-					return;
-				}
-			}
+		for ($count = 0; $count < 5; $count++) {
+			$count_out = $count + 1;
+			$tab_title = __('Tab') . ' ' . $count_out . ':';
+			
+			$options .= '<div class="tw-each-tab">' 
+				. $this->makeSimpleRadio($instance, 'start_tab', $count, $tab_title) 
+				. $this->makeSingleWidgetsList($instance, 'inside_' . $count . '_widget') . ' ' 
+				. $this->makeSingleWidgetsTitleField($instance, 'inside_' . $count . '_title') 
+				. '</div>';
 		}
-			
+		
+		$options .= '<div class="tw-each-tab">' . $this->makeSimpleRadio($instance, 'start_tab', 'default', __('Default start tab')) . '</div>';
+		$options .= '<div class="tw-randomstart">' . $this->make_checkbox($instance, 'random_start', __('Choose a random start tab')) . '</div>';
+		$options .= '<div class="tw-rotateoptions">' . $this->makeRotateOption($instance) . '</div>';
+		
+		$options .= '</div>';
+				
+		print $options;	
 	}
 	
+	function widget($args, $instance) {	
+		// Output tabbed interface
+		if ($instance['style'] == 'tabs' || $instance['style'] == 'accordion')
+			$this->print_tabbed_widget($args, $instance);
+	}	
 	
-	function outputTabbedWidget($defargs) {
+	function print_tabbed_widget($args, $instance) {
 		global $wp_registered_sidebars, $wp_registered_widgets;
 		
-		// Get widget data for the widgets inside
-		$tabbed_widgetdata = $wp_registered_widgets[$defargs['widget_id']];
-		// Get widget data for the tabbed widget
-		$no = str_replace('tabbed-widget-', '', $defargs['widget_id']);
-		$widgetdata = $this->tabbed_widget_content[$no];
+		$widgetdata = $this->get_widgetdata($instance);
+		$widget_no = str_replace('tabbed-widget-', '', $args['widget_id']);
 		
-		if (empty($widgetdata['widgets'])) 
-			$widgetdata['widgets'] = array();
+		if (!empty($instance['show_title']))
+			$widget_title = $args['before_title'] . $instance['widget_title'] . $args['after_title'];
 		
-		foreach ($widgetdata['widgets'] as $widget_id => $widget_inside) {
-			// check if widget content is not empty
-			$widget_inside = trim($widget_inside);
-			if (empty($widget_inside) || $widget_inside == '') {
-				unset($widgetdata['widgets'][$widget_id]);
-			}
-		}
-		
-		// Count how many normal widgets are in this tabbed widget
-		$widgets_inside_count = count($widgetdata['widgets']);
-
-		// get the id of the sidebar this widget is in
-		$sidebar_id = $this->getArrayIndex(wp_get_sidebars_widgets(), $defargs['widget_id']);
-		$sidebar_params = $wp_registered_sidebars[$sidebar_id];
-		// Get the before_widget data for this sidebar
-		$before_widget_raw = $sidebar_params['before_widget'];
-		// Prepare tabbed widget wrapper
-		$defargs['before_widget'] = sprintf($before_widget_raw, $defargs['widget_id'], 'tw-tabbed-widgets');
-		
-		
-		for ($count = 0; $count < $widgets_inside_count; $count++) {
-			$widget_id = $widgetdata['widgets'][$count];
-			$widget_content = $wp_registered_widgets[$widget_id];
-			
-			// combine widget formating params with other widget params
-			$params = array_merge(array($sidebar_params), (array)$this->stored_widgets[$widget_id]['params']);
-			
-			// Substitute HTML id and class attributes into before_widget
-			$classname_ = '';
-			foreach ((array)$this->stored_widgets[$widget_id]['classname'] as $cn) {
-				if (is_string($cn)) $classname_ .= '_' . $cn;
-				elseif (is_object($cn)) $classname_ .= '_' . get_class($cn);
-			}
-			$classname_ = strtolower(ltrim($classname_, '_'));
-			$before_widget = sprintf($before_widget_raw, $widget_id, $classname_);
-			
-			$params[0]['name'] = $widget_id;
-			$params[0]['before_widget'] = $before_widget;
-			
-			$wout[$count]['callback'] = $this->stored_widgets[$widget_id]['callback'];
-			$wout[$count]['params'] = $params;
-			$wout[$count]['title'] = $widgetdata['titles'][$count];
-		}
-		
-		if ($widgetdata['style'] == 'accordion') {
-			echo $this->style_accordion($defargs, $widgetdata, $wout);
-		} elseif ($widgetdata['style'] == 'tabs') {
-			echo $this->style_tabbed($defargs, $widgetdata, $wout);
-		}
-	}
-	
-	
-	function style_tabbed($defargs, $widgetdata, $wout) {
-		
-		$this->hide_tabbed_titles = true;
-		
-		$widgets_inside_count = count($widgetdata['widgets']);
-		$without_title_css = ' without_title';
-		
-		if (!empty($widgetdata['showtitle'])) {
-			$widget_title = $defargs['before_title'] . $widgetdata['title'] . $defargs['after_title'];
-			$without_title_css = '';
-		}
-		
-		$out = '<div class="tw-rotate' . $without_title_css . '"><ul class="tw-nav-list">';
-		for ($count = 0; $count < $widgets_inside_count; $count++) {
-			$out .= '<li><a href="#'.$defargs['widget_id'].'-'.$count.'"><span>'. $widgetdata['titles'][$count] .'</span></a></li> ';
-		}		
-		$out .= '</ul>';
-		
-		$result = $defargs['before_widget'];
+		$result = $args['before_widget'];
 		$result .= $widget_title;
-		$result .= $out;
 		
-		for ($count = 0; $count < $widgets_inside_count; $count++) {
+		if ($instance['style'] == 'tabs')
+			$result .= '<div class="tw-tabs">';
+		else
+			$result .= '<div class="tw-accordion">';
+		
+		foreach ($widgetdata['inside'] as $id => $inside) {
+			$callback = $wp_registered_widgets[$inside['widget']]['callback'];
+			$params = array_merge(array($args), (array)$wp_registered_widgets[$inside['widget']]['params']);
 			
-			if (is_callable($wout[$count]['callback'])) {
-				if (strstr($wout[$count]['params'][0]['before_widget'], '<li')) {
+			if (is_callable($callback)) {
+				if (strstr($args['before_widget'], '<li'))
 					$wrap_tag = 'ul';
-				} else {
+				else
 					$wrap_tag = 'div';
-				}
-				$result .= '<'. $wrap_tag .' id="'. $defargs['widget_id'] .'-'. $count .'" class="tabbed-widget-item">'; 
-				$result .= $this->callMe($wout[$count]['callback'], $wout[$count]['params']); 
-				$result .= '</'. $wrap_tag .'>';
-			}
-		}
-		
-		$result .= '</div>';
-		$result .= $defargs['after_widget'];
-		
-		return $result;
-	}
-	
-	
-	function style_accordion($defargs, $widgetdata, $wout) {
-	
-		extract($defargs);
-		$this->hide_tabbed_titles = true;
-		
-		$widgets_inside_count = count($widgetdata['widgets']);
-		$without_title_css = ' without_title';
-		
-		if (!empty($widgetdata['showtitle'])) {
-			$widget_title = $before_title . $widgetdata['title'] . $after_title;
-			$without_title_css = '';
-		}
-		
-		$result = $before_widget;
-		$result .= $widget_title;
-		$result .= '<div class="tw-accordion tw-accordion-'. $defargs['widget_id'] . $without_title_css .'">';
-		
-		for ($count = 0; $count < $widgets_inside_count; $count++) {
-			if (is_callable($wout[$count]['callback'])) {
-				if (strstr($wout[$count]['params'][0]['before_widget'], '<li')) {
-					$wrap_tag = 'ul';
-				} else {
-					$wrap_tag = 'div';
-				}
 				
-				$result .= '<h4 class="tw-widgettitle"><span>'. $widgetdata['titles'][$count] .'</span></h4> ';
-				$result .= '<'. $wrap_tag .' id="'. $defargs['widget_id'] .'-'. $count .'" class="tabbed-widget-item">'; 
-				$result .= $this->callMe($wout[$count]['callback'], $wout[$count]['params']); 
-				$result .= '</'. $wrap_tag .'>';
+				$widget_title = trim($inside['title']);
+				if (empty($widget_title))
+					$widget_title = $this->active_widgets[$inside['widget']]['titles']['original_title'];
+					
+				$params[0]['before_widget'] = '';
+				$params[0]['before_title'] = '<span style="display:none;">';
+				$params[0]['after_title'] = '</span>'
+					. '<h4 id="tw-title-'. $widget_no .'-'. $id .'" class="tw-title">'
+					. $widget_title
+					. '</h4> <'. $wrap_tag .' id="tw-content-'. $widget_no .'-'. $id .'" class="tw-content">';
+				$params[0]['after_widget'] = '</'. $wrap_tag .'>';
+				
+				$result .= $this->callMe($callback, $params); 
+			} else {
+				$result .= '<!-- t-error: Callback not possible. -->';
 			}
 		}
 		
 		$result .= '</div>';
-		$result .= $after_widget;
+		$result .= $args['after_widget'];
 		
-		return $result;
-	}
+		print $result;
+	}	
 	
+	// ------------------------------------ Helpers
 	
-	function callMe($callback, $params) {
+	function get_widgetdata($instance) {
+		$widgetdata = array();
 		
-		if ($this->hide_tabbed_titles) {
-			$params[0]['before_title'] = '<div class="tw-hide">' . $params[0]['before_title'];
-			$params[0]['after_title'] = $params[0]['after_title'] . '</div>';
+		// Turn the list of tab widgets into an array
+		foreach ($instance as $id => $value) {
+			list($kaka, $which, $what) = split('_', $id);
+			if ($kaka == 'inside') {
+				if ($what == 'title')
+					$widgetdata['inside'][$which]['title'] = $value;
+				if ($what == 'widget')
+					$widgetdata['inside'][$which]['widget'] = $value;
+			} else {
+				$widgetdata[$id] = $value;
+			}
 		}
 		
+		// check if widget content is not empty
+		foreach ($widgetdata['inside'] as $id => $data) {
+			$widget_inside = trim($data['widget']);
+			if (empty($widget_inside) || $widget_inside == '')
+				unset($widgetdata['inside'][$id]);
+		}
+		
+		return $widgetdata;
+	}
+	
+	function callMe($callback, $params) {		
 		ob_start();
-			call_user_func_array($callback, $params);
+			call_user_func_array($callback, $params);	
 			$output = ob_get_contents();
 		ob_end_clean();
 		
@@ -428,125 +349,45 @@ class tabbedWidgets {
 	}
 	
 	
-	function getArrayIndex($source, $searching) {
-		$index = '';
-		$source_count = count($source);
-		$_v_source = array_values($source);
-		$_k_source = array_keys($source);
-		
-		for ($count = 0; $count < $source_count; $count++) {
-			if (in_array($searching, $_v_source[$count])) {
-				$index = $_k_source[$count];
-			}
-		}
-
-		return $index;
-	}
-
-	
-	function printAdminOptions() {
-			
-		if($_POST['tw_options_submitted'] == 'y') {
-			update_option($this->tw_options_name, $_POST['tw']);
-			$ifupdated = '<div id="message" class="updated fade"><p><strong>' . __('Options saved.') . '</strong></p></div>';
-		}
-		
-		if (empty($this->active_widgets)) {
-			// this happens only if PHP < 5
-			$this->active_widgets = $this->get_active_widgets();
-		}
-		
-		$tw_options = get_option($this->tw_options_name);
-		
-		$options = $ifupdated 
-			. '<div class="wrap tw-settings"><form method="post" action="' . str_replace('%7E', '~', $_SERVER['REQUEST_URI']). '">' 
-			. wp_nonce_field('update-options')
-			. '<h2>Tabbed Widget Settings</h2>';
-		
-		if ($this->debbug_enabled) $options .= $notice;
-			
-		$options .= $this->makeDonate();	
-		$options .= '<fieldset>'
-			 . '<div><p>' . $this->makeDefaultRotateOption($tw_options) . '</p></div>'
-			 . $this->make_checkbox('Enable rounded corners for tabs', 'rounded-corners', 'using <a href="http://labs.parkerfox.co.uk/cornerz/">Cornerz</a> plugin for jQuery', $tw_options)
-		 	 . '</fieldset>';
-		
-		$options .= $this->makeSubmitButton();
-		
-		$options .= '<div class="widget-wrapper">';
-		for ($id = 1; $id <= $this->tw_available; $id++) {
-		
-			$options .= '<fieldset class="widget-fieldset"><legend><strong>' . __('Tabbed Widget No.') . ' ' . $id . '</strong></legend><div>';
-			$options .= '<p class="tw-title"><label>' . __('Widget Title') . ': <input type="text" name="tw[' . $id . '][title]"  class="tw-widget-title" value="'. $tw_options[$id]['title'] .'" /></label> ';
-			$options .= ' &mdash; ' . $this->makeTitleOption($id, $count, $tw_options) . '</p>';
-			
-			for ($count = 1; $count <= $this->tabs_per_tw; $count++) {
-				$tab_title = __('Tab') . ' ' . $count . ':';
-				$options .= '<div class="tw-each-tab">' . $this->makeSimpleRadio($tw_options, $id, 'start', $count, $tab_title) . $this->makeSingleWidgetsList($id, $count, $tw_options) . ' ' .  $this->makeSingleWidgetsTitleField($id, $count, $tw_options) . '</div>';
-			}
-			
-			$options .= '<div class="tw-each-tab">' . $this->makeSimpleRadio($tw_options, $id, 'start', 'default', 'Default start tab') . '</div>';
-			
-			if (empty($tw_options[$id]['style'])) $tw_options[$id]['style'] = 'tabs';
-			
-			$options .= '<p class="tw-style-type"><strong>'. __('Style as') .'</strong>: ';
-			$options .= '<span>' . $this->makeSimpleRadio($tw_options, $id, 'style', 'tabs', __('tabs')) . ' '. __('or') .'</span> ';
-			$options .= '<span>' . $this->makeSimpleRadio($tw_options, $id, 'style', 'accordion', __('accordion')) . '</span></p>';
-			$options .= '<div class="tw-rotateoptions">' . $this->makeRotateOption($id, $count, $tw_options) . '</div>';
-			$options .= '<div class="tw-randomstart">' . $this->makeRandomStartOption($id, $count, $tw_options) . '</div>';
-			$options .= $this->makeSubmitButton();
-			$options .= '</div></fieldset>';
-		}
-		$options .= '</div>';
-		
-		$options .= $this->makeSubmitButton() . '<input type="hidden" name="tw_options_submitted" value="y"></form></div>';
-				
-		print $options;
-		
-	}
-	
-	
-	function makeSubmitButton() {
-		return '<p class="submit"><input type="submit" name="Submit" value="' . __('Update Options') . '" /></p>';
-	}
+	// ------------------------------------ Design
 	
 	function makeDonate() {
-		return '<p class="tw-donate"><a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kaspars%40konstruktors%2ecom&item_name=Tabbed%20Widgets%20Plugin%20for%20WordPress&no_shipping=1&no_note=1&tax=0&currency_code=EUR&lc=LV&bn=PP%2dDonationsBF&charset=UTF%2d8"><img alt="Donate" src="https://www.paypal.com/en_US/i/btn/btn_donate_LG.gif" /></a> '. __('Plugin developed by') . ' <a href="http://konstruktors.com/blog/">Kaspars Dambis</a>. '. __('If you find it useful, please consider donating.') .'</p>';
+		return '<p class="tw-donate">'. __('Plugin developed by') . ' <a href="http://konstruktors.com/blog/">Kaspars Dambis</a>. <strong>If you find it useful, please consider <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kaspars%40konstruktors%2ecom&item_name=Tabbed%20Widgets%20Plugin%20for%20WordPress&no_shipping=1&no_note=1&tax=0&currency_code=EUR&lc=LV&bn=PP%2dDonationsBF&charset=UTF%2d8">donating</a></strong>.</p>';
 	}	
-
-	function make_checkbox($label, $fieldname, $tip = false, $options = array()) {
-		if ($tip) $tip = '<small>(' . __($tip) . ')</small>';
-		$doenable = $options['enable-' . $fieldname];
 	
-		if (!empty($doenable)) {
+	function make_checkbox($instance, $inst_name, $label = '', $tip = '') {
+		if ($tip) $tip = '<small>(' . $tip . ')</small>';
+	
+		if (!empty($instance[$inst_name])) {
 			$value = 1; $checked = 'checked="checked"';
 		} else {
 			$value = 0; $checked = '';
 		}			
-		$out = '<div><label><input type="checkbox" id="option-' . $fieldname . '" name="tw[enable-' . $fieldname . ']" '. $checked .' /> '
-			. __($label) . '</label> ' . $tip . '</div>';
+		$out = '<div><label><input type="checkbox" id="' . $this->get_field_id($inst_name) . '" name="' . $this->get_field_name($inst_name) . '" '. $checked .' /> '
+			. $label . ' ' . $tip . '</label></div>';
 
 		return $out;
 	}
 
-	function makeSingleWidgetsList($id = 0, $count = 0, $options = array()) {
-		
-		$list = '<label class="tw-in-widget-list"><select name="tw[' . $id . '][widgets][]">';	
-		$list .= '<option></option>';
+	function makeSingleWidgetsList($instance, $inst_name) {
+		$list = ' <label class="tw-in-widget-list">'
+			. '<select name="' . $this->get_field_name($inst_name) . '" id="'. $this->get_field_id($inst_name) .'">'
+			. '<option></option>';
 		
 		if (!empty($this->active_widgets)) {
-			foreach ($this->active_widgets as $widget => $value) {
-				
-				if (!empty($options)) {
-					if ($options[$id]['widgets'][$count-1] == $widget) {
-						$selected = 'selected="selected"';
-					} else {
-						$selected = '';
-					}
+			foreach ($this->active_widgets as $widget_id => $widget_data) {
+				$value = $widget_data['titles']['original_title'];
+				if (!empty($widget_data['titles']['given_title']))
+					$value .= ': ' . $widget_data['titles']['given_title'];
+					
+				if ($instance[$inst_name] == $widget_id) {
+					$selected = 'selected="selected"';
+				} else {
+					$selected = '';
 				}
 				
-				if (strpos($widget, 'tabbed-widget') === false && strpos($widget, 'wl-clone') === false) {
-					$list .= '<option value="' . $widget . '" ' . $selected . '>' . $value . '</option>';
+				if (strpos($widget_id, 'tabbed-widget') === false) {
+					$list .= '<option value="' . $widget_id . '" ' . $selected . '>' . esc_attr($value) . '</option>';
 				}
 			}
 		} else {
@@ -558,180 +399,48 @@ class tabbedWidgets {
 		return $list;
 	}
 	
-	
-	function makeSingleWidgetsTitleField($id = 0, $count = 0, $options = array()) {
-		
-		$title = '<label class="tw-in-widget-title">' . __('Title') . ': ' 
-			. '<input type="text" name="tw[' . $id . '][titles][]" value="'. $options[$id]['titles'][$count - 1] .'" size="19" /></label>';
-
-		return $title;
+	function makeSingleWidgetsTitleField($instance, $inst_name) {
+		return '<label class="tw-in-widget-title">' . __('Title') . ': ' 
+			. '<input type="text" name="'. $this->get_field_name($inst_name) .'" id="'. $this->get_field_id($inst_name) .'" value="'. esc_attr($instance[$inst_name]) .'" /></label>';
 	}
 
-	function makeSimpleRadio($options, $id, $fieldname, $value, $label = null) {
-		
-		if ($options[$id][$fieldname] == $value) {
-			$checked = 'checked="checked"'; $classname = 'tw-active';
+	function makeSimpleRadio($instance, $inst_name, $id, $label = null) {
+		if ($instance[$inst_name] == $id) {
+			$checked = 'checked="checked"';
 		} else {
-			$checked = ''; $classname = 'tw-inactive'; 
+			$checked = '';
 		}
 		
-		$id = '[' . $id . ']';
-		$fieldname_out = '[' . $fieldname . ']';
-		
-		$out = '<label class="' . $classname . ' label-'. $value .' label-'. $fieldname .'"><input type="radio" name="tw'. $id . $fieldname_out . '" value="'. $value .'" '. $checked .' /> ' 
+		return '<label class="' . $classname . '">'
+			. '<input type="radio" id="'. $this->get_field_id($inst_name) .'" name="'. $this->get_field_name($inst_name) . '" value="'. $id .'" '. $checked .' /> ' 
 			. $label . '</label>';
-			
-		return $out;
 	}	
 
-	function makeTitleOption($id = 0, $count = 0, $options = array()) {
-		$showtitle = $options[$id]['showtitle'];
-		
-		if (!empty($showtitle)) {
+	function makeTitleOption($instance, $inst_name, $label = '') {
+		if (!empty($instance[$inst_name])) {
 			$value = 1; $checked = 'checked="checked"';
 		} else {
 			$value = 0; $checked = '';
 		}
 		
-		$out = '<input type="checkbox" id="tw_showtitle_' . $id . '" name="tw[' . $id . '][showtitle]" '. $checked .' /> ' 
-			. '<label for="tw_showtitle_' . $id . '">' . __('show title') . '</label> ';
-			
-		return $out;
+		return '<input type="checkbox" id="' . $this->get_field_id($inst_name) . '" name="' . $this->get_field_name($inst_name) . '" '. $checked .' /> ' 
+			. '<label for="' . $this->get_field_id($inst_name) . '">' . __($label) . '</label> ';
 	}
 
-
-	function makeDefaultRotateOption($options = array()) {
-		$rotatetime = $options['default_rotate_time'];
-	
-		if (is_numeric($rotatetime)) {
-			if ($rotatetime < 1) $rotatetime = 1;
-			if ($rotatetime > 30) $rotatetime = 30;
+	function makeRotateOption($instance) {
+		if (isset($instance['rotate'])) {
+			$checked = 'checked="checked"';
 		} else {
-			$rotatetime = $this->defaultRotateInterval;
+			$checked = '';
 		}
 		
-		$out = '<label>' . __('Default rotate interval (in seconds)') . ': ' 
-			. '<input type="text" name="tw[default_rotate_time]" value="'. $rotatetime .'" size="3" /> <small>(' . __('used only when tab rotation is enabled') . ')</small></label>';
-			
-		return $out;
-	}	
-
-	function makeRotateOption($id = 0, $count = 0, $options = array()) {
-		$rotate = $options[$id]['rotate'];
-		$rotatetime = $options[$id]['rotatetime'];
-		
-		if (!empty($rotate)) {
-			$value = 1; $checked = 'checked="checked"';
-			// if (empty($rotatetime)) $rotatetime = $options['default_rotate_time'];
-		} else {
-			$value = 0; $checked = '';
-			$rotatetime = '';
-		}
-		
-		if (is_numeric($rotatetime)) {
-			if ($rotatetime < 1) $rotatetime = 1;
-			if ($rotatetime > 30) $rotatetime = 30;
-		} else {
-			$rotatetime = '';
-		}
-		
-		$out = '<p class="inputfields"><input type="checkbox" id="tw_rotate_' . $id . '" name="tw[' . $id . '][rotate]" '. $checked .' /> ' 
-			. '<label for="tw_rotate_' . $id . '">' . __('Rotate tabs') . '</label> '
-			. '<label>' . __('with interval (in seconds)') . ': ' 
-			. '<input type="text" name="tw[' . $id . '][rotatetime]" value="'. $rotatetime .'" size="3" /> </label></p> <span class="info">' . __('(default used, if empty)') . '</span>';
-			
-		return $out;
+		return '<label><input type="checkbox" id="'. $this->get_field_id('rotate') .'" name="'. $this->get_field_name('rotate') .'" '. $checked .'  /> ' 
+			. __('Rotate tabs') . '</label> <label class="tw-rotate-time">' . __('with interval (in seconds)') . ': ' 
+			. '<input type="text" id="'. $this->get_field_id('rotate_time') .'" name="'. $this->get_field_name('rotate_time') .'" value="'. $instance['rotate_time'] .'" size="3" /></label> <span class="info">' . __('(default is 10 seconds)') . '</span>';
 	}
 	
-	
-	function makeRandomStartOption($id = 0, $count = 0, $options = array()) {
-		$randomstart = $options[$id]['randomstart'];
-		
-		if (!empty($randomstart)) {
-			$value = 1; $checked = 'checked="checked"';
-		} else {
-			$value = 0; $checked = '';
-		}
-		
-		$out = '<input type="checkbox" id="tw_randomstart_' . $id . '" name="tw[' . $id . '][randomstart]" '. $checked .' /> ' 
-			. '<label for="tw_randomstart_' . $id . '">' . __('Choose random start tab') . '</label> ';
-			
-		return $out;
-	}
-	
-	
-	function get_active_widgets() {
-		global $wp_registered_sidebars;
-		
-		$visible_widgets = wp_get_sidebars_widgets();
-		$sidebar_params = array_values($wp_registered_sidebars);
-		$sidebar_params = $sidebar_params[0];
-		
-		if (empty($this->stored_widgets)) {
-			// this happens only in PHP 4.4.6
-			$this->stored_widgets = get_option($this->tw_original_widgets);
-		}
-		
-		foreach ($this->stored_widgets as $widget_id => $widget_data) {
-		
-			$widget_name = $widget_data['name'];
-			$widget_params = $widget_data['params'];
-			$widget_callback = $widget_data['callback'];
-			
-			if (in_array($widget_id, $visible_widgets) || !in_array($widget_id, $this->donot_list_without_config)) { 
-			
-				// if parameter is a string
-				if (isset($widget_params[0]) && !is_array($widget_params[0])) {
-					$widget_params = $widget_params[0];
-				}
-				
-				$sidebar_params['before_title'] = '[[';
-				$sidebar_params['after_title'] = ']]';
-				
-				$all_params = array_merge(array($sidebar_params), (array)$widget_params);					
-				
-				if (is_callable($widget_callback) && !is_integer(strpos($widget_id, 'wl-clone')) && !empty($widget_name)) {
-				
-					ob_start();
-						call_user_func_array($widget_callback, $all_params);
-						$widget_title = ob_get_contents();
-					ob_end_clean();
-					
-					$find_fn_pattern = '/\[\[(.*?)\]\]/';
-					preg_match_all($find_fn_pattern, $widget_title, $result);
-					$got_title = strip_tags(trim((string)$result[1][0]));
-					
-					if (!empty($got_title) && $got_title !== '') {
-						$widget_title = $widget_name . ': ' . $got_title;
-					} else {
-						$widget_title = $widget_name;
-					}
-					
-				} else {
-					$widget_title = $widget_name;
-				}
-			
-				$out[$widget_id] = $widget_title;
-			}
-		}
-		
-		return $out;
-	}
-
 }
 
-$root = dirname(dirname(dirname(dirname(__FILE__))));
 
-if (file_exists($root . '/wp-load.php')) {
-	require_once($root . '/wp-load.php'); // WP 2.6
-} else {
-	require_once($root . '/wp-config.php'); // Before 2.6
-}
-
-if (isset($_GET['returnjs'])) {
-	new tabbedWidgets($printjsvars = true);
-} else {
-	$twidgets = new tabbedWidgets();
-}
 
 ?>
