@@ -37,12 +37,12 @@ Therefore, I offer [Tabbed Widget design customization service](http://konstrukt
 
 2.	Under ‘Design’ › ‘Widgets’ drag a new "Tabbed Widget" (from the list of Available Widgets) into a sidebar where you want it to appear.
 
-3.	Choose which widgets 
+3.	Widgets that have configuration settings *must* be placed in the 'Invisible Sidebar Area' before they will appear in the drop-down menu.
 
 
 == Changelog ==
 
-*	**0.82**: Fixed empty javascript variables, updated readme.txt.
+*	**0.82**: Fixed empty javascript variables, updated readme.txt and faq.
 *	**0.81**: Added support for 2.8+; Updated Javascript, simplified interface.
 *	**0.76** and **0.77**: Bug fix: Selected start tab was not opened for accordion type widgets.
 *	**0.74**: Fixed active widget list creation error for PHP 4.3.6 users. It turned out that $this->tabbed_widget_content doesn't get passed around from class init to child functions. Could be a WP issue as well.
@@ -58,6 +58,12 @@ Therefore, I offer [Tabbed Widget design customization service](http://konstrukt
 == Frequently Asked Questions ==
 
 Post your questions in [WordPress support forum](http://wordpress.org/tags/tabbed-widgets?forum_id=10).
+
+= Widget X doesn't appear in the drop-down selection =
+
+It is most likely that the widget must be configured before it can be used, 
+therefore place it in the 'Invisible Sidebar Area', refresh the Widget 
+admin page and it should appear in the drop-down selection.
 
 == Screenshots ==
 
