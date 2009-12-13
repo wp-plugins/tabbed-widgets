@@ -3,7 +3,7 @@
 Plugin Name: Tabbed Widgets
 Plugin URI: http://wordpress.org/extend/plugins/tabbed-widgets/
 Description: Place widgets into tabbed and accordion type interface.
-Version: 0.81
+Version: 0.82
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com/blog/
 
@@ -13,13 +13,10 @@ Thanks for the suggestions to Ronald Huereca.
 // Option row where we store widget copies, as other plugins (such as widget context) might take them over
 define('ORIGINAL_WIDGETS', 'tabbed_widgets_originals');
 
-// Necessary for the js to work
+// Necessary for the javascript to work
 $root = dirname(dirname(dirname(dirname(__FILE__))));
-if (file_exists($root . '/wp-load.php')) {
-	require_once($root . '/wp-load.php'); // WP 2.6
-} else {
-	require_once($root . '/wp-config.php'); // Before 2.6
-}
+if (file_exists($root . '/wp-load.php'))
+	require_once($root . '/wp-load.php');
 
 // Start the engine
 if (isset($_GET['returnjs']))
@@ -34,10 +31,7 @@ class tabbedWidgets {
 	var $stored_widgets = array();
 	var $plugin_path = '';
 	
-	function tabbedWidgets($printjsvars = false) {
-		if (!defined('WP_CONTENT_URL')) 
-			define('WP_CONTENT_URL', get_option('siteurl') . '/wp-content'); // Pre-2.6 compatibility
-			
+	function tabbedWidgets($printjsvars = false) {			
 		$this->plugin_path = WP_CONTENT_URL . '/plugins/'. plugin_basename(dirname(__FILE__)) . '/';
 		
 		if (!$printjsvars) {
@@ -54,11 +48,9 @@ class tabbedWidgets {
 		// Init tabbed widgets
 		register_widget('tabbedWidgetWidget');
 		
-		// Add an invisible sidebar for placing widgets that would be only used inside tabbed interface.
-		if (function_exists('register_sidebar')) {
-			// Add widgetized area for placing and configuring widgets that are going to be used in tabbed widgets.
+		// Add widgetized area for placing and configuring widgets that are going to be used in tabbed widgets.
+		if (function_exists('register_sidebar'))
 		    register_sidebar(array('name' => 'Invisible Widget Area'));
-		}	
 	}
 	
 	function saveWidgets() {
@@ -67,7 +59,7 @@ class tabbedWidgets {
 		$sidebars_widgets = wp_get_sidebars_widgets(false);
 		
 		// Stored widgets include all default widget settings and function calls
-		if (is_array($sidebars_widgets) || !empty($sidebars_widgets)) {
+		if (is_array($sidebars_widgets) && !empty($sidebars_widgets)) {
 			foreach ($sidebars_widgets as $sidebar_id => $widgets) {
 				if (!empty($widgets)) {
 					foreach ($widgets as $widget_id) {
@@ -88,13 +80,14 @@ class tabbedWidgets {
 		$widget_params = $widget_data['params'];
 		$widget_callback = $widget_data['callback'];
 		
-		// if parameter is a string
-		if (isset($widget_params[0]) && !is_array($widget_params[0])) {
-			$widget_params = $widget_params[0];
-		}
+		//print_r($widget_data);
 		
-		$sidebar_params['before_title'] = '[[';
-		$sidebar_params['after_title'] = ']]';
+		// if parameter is a string
+		if (isset($widget_params[0]) && !is_array($widget_params[0]))
+			$widget_params = $widget_params[0];
+		
+		$sidebar_params['before_title'] = '[%';
+		$sidebar_params['after_title'] = '%]';
 		$all_params = array_merge(array($sidebar_params), (array)$widget_params);					
 			
 		if (is_callable($widget_callback)) {
@@ -103,24 +96,26 @@ class tabbedWidgets {
 				call_user_func_array($widget_callback, $all_params);
 				$widget_title = ob_get_contents();
 			ob_end_clean();
+			
 			// Extract only title of the widget
-			$find_fn_pattern = '/\[\[(.*?)\]\]/';
+			$find_fn_pattern = '/\[\%(.*?)\%\]/';
 			preg_match_all($find_fn_pattern, $widget_title, $result);
 			$given_title = strip_tags(trim((string)$result[1][0]));
 		} else {
 			$widget_title = $widget_name;
 			$given_title = '';
 		}
-	
-		$out['original_title'] = $widget_name;
-		$out['given_title'] = $given_title;
 		
-		return $out;
+		return array('original_title' => $widget_name, 'given_title' => $given_title);
 	}		
 
 	function addOptionsPage() {
 		// $options_page = add_theme_page('Tabbed Widgets', 'Tabbed Widgets', 10, basename(__FILE__), array($this, 'printAdminOptions'));
 		add_action('admin_enqueue_scripts', array($this, 'addAdminCSS'));
+	}
+
+	function addAdminCSS() {
+		wp_enqueue_style('tabbed-widgets-admin', $this->plugin_path . 'css/admin-style.css');
 	}
 	
 	function addHeader() {
@@ -134,15 +129,13 @@ class tabbedWidgets {
 		wp_enqueue_script('tabbed-widgets-init',  $this->plugin_path . basename(__FILE__) . '?returnjs=true', array('jquery', 'jquery-ui-tabs', 'jquery-ui-accordion'));
 		// Add Stylesheet
 		wp_enqueue_style('tabbed-widgets', $this->plugin_path . 'css/tabbed-widgets.css');
-	}
-
-	function addAdminCSS() {
-		wp_enqueue_style('tabbed-widgets-admin', $this->plugin_path . 'css/admin-style.css');
 	}	
 	
 	function printJsVars() {
 		// Read tabbed widget options
 		$tw_options = get_option('widget_tabbed-widget');
+		
+		//print_r($tw_options);
 		
 		// read the tabs init js file
 		$filename = dirname(__FILE__) . '/js/init-plugin.js';
@@ -163,24 +156,23 @@ class tabbedWidgets {
 			$random_start = $tw_settings['random_start'];
 			$start_tab = $tw_settings['start_tab'];
 			
-			if (!empty($rotate)) 
-				$rotate = 1;
-			else 
+			if (empty($rotate))
 				$rotate = 0;
-			
-			if ($rotate && empty($rotate_time))
-				$rotate_time = 10000;
-			elseif ($rotate)
-				$rotate_time = intval($rotate_time * 1000);
-			
-			// Don't allow rotation times slower than 1 second.
-			if ($rotate_time < 1000)
-				$rotate_time = 1000;
-			
-			if (!empty($random_start)) 
-				$random_start = 1;
 			else 
+				$rotate = 1;
+			
+			if (empty($random_start))
 				$random_start = 0;
+			else 
+				$random_start = 1;
+
+			if (empty($rotate_time))
+				$rotate_time = 10000; // Make default rotate time 10 seconds
+			elseif ($rotate)
+				$rotate_time = intval($rotate_time) * 1000; // Convert seconds to miliseconds
+			
+			if ($rotate_time < 1000)
+				$rotate_time = 1000; // Don't allow rotation times slower than 1 second.
 
 			$jsvars .= $optionsvar . '[' . $tw_id . '] = new Array();' . "\n";
 			$jsvars .= $optionsvar . '[' . $tw_id . ']["style"] = "' . $style . "\";\n";
@@ -217,9 +209,18 @@ class tabbedWidgetWidget extends WP_Widget {
 	}
 	
 	function update($new_instance, $old_instance) {
-		$new_instance['rotate_time'] = trim($new_instance['rotate_time']);
-		if (!is_numeric($new_instance['rotate_time']))
-			$new_instance['rotate_time'] = '';
+		if (!empty($new_instance['rotate'])) 
+			$new_instance['rotate'] = 1;
+		else 
+			$new_instance['rotate'] = 0;
+		
+		if (!empty($new_instance['random_start'])) 
+			$new_instance['random_start'] = 1;
+		else 
+			$new_instance['random_start'] = 0;
+			
+		if (!is_numeric($new_instance['start_tab']))
+			$new_instance['start_tab'] = 0;			
 		
 		return $new_instance;
 		// return array();
@@ -311,6 +312,7 @@ class tabbedWidgetWidget extends WP_Widget {
 		print $result;
 	}	
 	
+	
 	// ------------------------------------ Helpers
 	
 	function get_widgetdata($instance) {
@@ -356,14 +358,15 @@ class tabbedWidgetWidget extends WP_Widget {
 	}	
 	
 	function make_checkbox($instance, $inst_name, $label = '', $tip = '') {
-		if ($tip) $tip = '<small>(' . $tip . ')</small>';
+		if ($tip) 
+			$tip = '<small>(' . $tip . ')</small>';
 	
-		if (!empty($instance[$inst_name])) {
-			$value = 1; $checked = 'checked="checked"';
-		} else {
-			$value = 0; $checked = '';
-		}			
-		$out = '<div><label><input type="checkbox" id="' . $this->get_field_id($inst_name) . '" name="' . $this->get_field_name($inst_name) . '" '. $checked .' /> '
+		if ($instance[$inst_name] == 1 || $instance[$inst_name] == 'on')
+			$checked = 'checked="checked"';
+		else
+			$checked = '';
+				
+		$out = '<div><label><input value="1" type="checkbox" id="' . $this->get_field_id($inst_name) . '" name="' . $this->get_field_name($inst_name) . '" '. $checked .' /> '
 			. $label . ' ' . $tip . '</label></div>';
 
 		return $out;
@@ -373,7 +376,7 @@ class tabbedWidgetWidget extends WP_Widget {
 		$list = ' <label class="tw-in-widget-list">'
 			. '<select name="' . $this->get_field_name($inst_name) . '" id="'. $this->get_field_id($inst_name) .'">'
 			. '<option></option>';
-		
+			
 		if (!empty($this->active_widgets)) {
 			foreach ($this->active_widgets as $widget_id => $widget_data) {
 				$value = $widget_data['titles']['original_title'];
@@ -405,11 +408,10 @@ class tabbedWidgetWidget extends WP_Widget {
 	}
 
 	function makeSimpleRadio($instance, $inst_name, $id, $label = null) {
-		if ($instance[$inst_name] == $id) {
+		if ($instance[$inst_name] == $id)
 			$checked = 'checked="checked"';
-		} else {
+		else
 			$checked = '';
-		}
 		
 		return '<label class="' . $classname . '">'
 			. '<input type="radio" id="'. $this->get_field_id($inst_name) .'" name="'. $this->get_field_name($inst_name) . '" value="'. $id .'" '. $checked .' /> ' 
@@ -417,24 +419,22 @@ class tabbedWidgetWidget extends WP_Widget {
 	}	
 
 	function makeTitleOption($instance, $inst_name, $label = '') {
-		if (!empty($instance[$inst_name])) {
-			$value = 1; $checked = 'checked="checked"';
-		} else {
-			$value = 0; $checked = '';
-		}
+		if ($instance[$inst_name] == 1 || $instance[$inst_name] == 'on')
+			$checked = 'checked="checked"';
+		else
+			$checked = '';
 		
-		return '<input type="checkbox" id="' . $this->get_field_id($inst_name) . '" name="' . $this->get_field_name($inst_name) . '" '. $checked .' /> ' 
+		return '<input type="checkbox" value="1" id="' . $this->get_field_id($inst_name) . '" name="' . $this->get_field_name($inst_name) . '" '. $checked .' /> ' 
 			. '<label for="' . $this->get_field_id($inst_name) . '">' . __($label) . '</label> ';
 	}
 
-	function makeRotateOption($instance) {
-		if (isset($instance['rotate'])) {
+	function makeRotateOption($instance) {		
+		if ($instance['rotate'] == 1 || $instance['rotate'] == 'on')
 			$checked = 'checked="checked"';
-		} else {
+		else
 			$checked = '';
-		}
 		
-		return '<label><input type="checkbox" id="'. $this->get_field_id('rotate') .'" name="'. $this->get_field_name('rotate') .'" '. $checked .'  /> ' 
+		return '<label><input type="checkbox" value="1" id="'. $this->get_field_id('rotate') .'" name="'. $this->get_field_name('rotate') .'" '. $checked .'  /> ' 
 			. __('Rotate tabs') . '</label> <label class="tw-rotate-time">' . __('with interval (in seconds)') . ': ' 
 			. '<input type="text" id="'. $this->get_field_id('rotate_time') .'" name="'. $this->get_field_name('rotate_time') .'" value="'. $instance['rotate_time'] .'" size="3" /></label> <span class="info">' . __('(default is 10 seconds)') . '</span>';
 	}
