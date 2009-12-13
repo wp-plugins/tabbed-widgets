@@ -1,0 +1,9 @@
+
+.tw-title {  }
+input.tw-widget-title { width:25em; }
+label.tw-in-widget-list select { width:10em; }
+label.tw-in-widget-title input { width:15em; }
+.tw-rotate-time input { width:3em; }
+.tw-each-tab { padding:0.5em; margin:0.25em 0; background-color:#eee; }
+.tw-randomstart, .tw-rotateoptions { padding:0.5em; border-bottom:1px solid #ddd; }
+.widget .widget-inside p.tw-widget-note { font-size:1em; border-top:1px solid #ddd; margin:0; padding:0.25em 0; display:block; color:#666; }
