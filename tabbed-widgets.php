@@ -1,13 +1,13 @@
 <?php
 /*
 Plugin Name: Tabbed Widgets
-Plugin URI: http://wordpress.org/extend/plugins/tabbed-widgets/
+Plugin URI: http://konstruktors.com/blog/projects-services/wordpress-plugins/tabbed-accordion-widgets/
 Description: Place widgets into tabbed and accordion type interface.
-Version: 0.82
+Version: 0.83
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com/blog/
 
-Thanks for the suggestions to Ronald Huereca.
+Thanks for suggestions to Ronald Huereca.
 */
 
 // Option row where we store widget copies, as other plugins (such as widget context) might take them over
@@ -80,8 +80,6 @@ class tabbedWidgets {
 		$widget_params = $widget_data['params'];
 		$widget_callback = $widget_data['callback'];
 		
-		//print_r($widget_data);
-		
 		// if parameter is a string
 		if (isset($widget_params[0]) && !is_array($widget_params[0]))
 			$widget_params = $widget_params[0];
@@ -110,7 +108,6 @@ class tabbedWidgets {
 	}		
 
 	function addOptionsPage() {
-		// $options_page = add_theme_page('Tabbed Widgets', 'Tabbed Widgets', 10, basename(__FILE__), array($this, 'printAdminOptions'));
 		add_action('admin_enqueue_scripts', array($this, 'addAdminCSS'));
 	}
 
@@ -135,8 +132,6 @@ class tabbedWidgets {
 		// Read tabbed widget options
 		$tw_options = get_option('widget_tabbed-widget');
 		
-		//print_r($tw_options);
-		
 		// read the tabs init js file
 		$filename = dirname(__FILE__) . '/js/init-plugin.js';
 		$handle = fopen($filename, "r");
@@ -156,12 +151,15 @@ class tabbedWidgets {
 			$random_start = $tw_settings['random_start'];
 			$start_tab = $tw_settings['start_tab'];
 			
-			if (empty($rotate))
+			if (!is_numeric($start_tab))
+				$start_tab = 0;
+			
+			if (empty($rotate) || $rotate != 'on')
 				$rotate = 0;
 			else 
 				$rotate = 1;
 			
-			if (empty($random_start))
+			if (empty($random_start) || $random_start != 'on')
 				$random_start = 0;
 			else 
 				$random_start = 1;
@@ -208,20 +206,7 @@ class tabbedWidgetWidget extends WP_Widget {
 			$this->active_widgets = get_option(ORIGINAL_WIDGETS);
 	}
 	
-	function update($new_instance, $old_instance) {
-		if (!empty($new_instance['rotate'])) 
-			$new_instance['rotate'] = 1;
-		else 
-			$new_instance['rotate'] = 0;
-		
-		if (!empty($new_instance['random_start'])) 
-			$new_instance['random_start'] = 1;
-		else 
-			$new_instance['random_start'] = 0;
-			
-		if (!is_numeric($new_instance['start_tab']))
-			$new_instance['start_tab'] = 0;			
-		
+	function update($new_instance, $old_instance) {		
 		return $new_instance;
 		// return array();
 	}
@@ -233,6 +218,7 @@ class tabbedWidgetWidget extends WP_Widget {
 		$options .= '<p class="tw-style-type"><strong>'. __('Style as') .'</strong>: ';
 		$options .= '<span>' . $this->makeSimpleRadio($instance, 'style', 'tabs', __('tabs')) . ' '. __('or') .'</span> ';
 		$options .= '<span>' . $this->makeSimpleRadio($instance, 'style', 'accordion', __('accordion')) . '</span></p>';
+		$options .= $this->makeDonate();
 		$options .= '<p class="tw-widget-note">' . __('Place widget inside the <em>Invisible Widget Area</em> to make it available here.') . '</p>';
 			
 		for ($count = 0; $count < 5; $count++) {
@@ -353,10 +339,6 @@ class tabbedWidgetWidget extends WP_Widget {
 	
 	// ------------------------------------ Design
 	
-	function makeDonate() {
-		return '<p class="tw-donate">'. __('Plugin developed by') . ' <a href="http://konstruktors.com/blog/">Kaspars Dambis</a>. <strong>If you find it useful, please consider <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kaspars%40konstruktors%2ecom&item_name=Tabbed%20Widgets%20Plugin%20for%20WordPress&no_shipping=1&no_note=1&tax=0&currency_code=EUR&lc=LV&bn=PP%2dDonationsBF&charset=UTF%2d8">donating</a></strong>.</p>';
-	}	
-	
 	function make_checkbox($instance, $inst_name, $label = '', $tip = '') {
 		if ($tip) 
 			$tip = '<small>(' . $tip . ')</small>';
@@ -407,11 +389,18 @@ class tabbedWidgetWidget extends WP_Widget {
 			. '<input type="text" name="'. $this->get_field_name($inst_name) .'" id="'. $this->get_field_id($inst_name) .'" value="'. esc_attr($instance[$inst_name]) .'" /></label>';
 	}
 
+	function makeDonate() {
+		return '<p class="tw-donate"><a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kaspars%40konstruktors%2ecom&item_name=Tabbed%20Widgets%20Plugin%20for%20WordPress&no_shipping=1&no_note=1&tax=0&currency_code=USD&lc=LV&bn=PP%2dDonationsBF&charset=UTF%2d8" title="Show your love and support -- make a donation. It is truly appreciated!" target="_blank">Donate</a></p>';
+	}	
+	
 	function makeSimpleRadio($instance, $inst_name, $id, $label = null) {
-		if ($instance[$inst_name] == $id)
+		if ($instance[$inst_name] == $id) {
 			$checked = 'checked="checked"';
-		else
+			$classname = 'active';
+		} else {
 			$checked = '';
+			$classname = '';
+		}
 		
 		return '<label class="' . $classname . '">'
 			. '<input type="radio" id="'. $this->get_field_id($inst_name) .'" name="'. $this->get_field_name($inst_name) . '" value="'. $id .'" '. $checked .' /> ' 

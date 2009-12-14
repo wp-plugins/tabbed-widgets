@@ -4,13 +4,11 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kaspa
 Tags: widget, widgets, tabs, tabbed widgets, accordion, sidebar, ui
 Requires at least: 2.8
 Tested up to: 2.9
-Stable tag: 0.82
+Stable tag: 0.83
 
 Create tab and accordion type widgets without writing a single line of code.
 
 == Description ==
-
-See a live demo at [Konstruktors Notes](http://konstruktors.com/blog/ "Writings about the Web, design and development").
 
 Tabbed interfaces are the most common on newspaper type website where they can save a 
 lot of vertical space and make it look less cluttered. Accordion type tabs are 
@@ -42,6 +40,7 @@ Therefore, I offer [Tabbed Widget design customization service](http://konstrukt
 
 == Changelog ==
 
+*	**0.83** (Dec 14, 2009) -- Another fix of javascript variables.
 *	**0.82**: Fixed empty javascript variables, updated readme.txt and faq.
 *	**0.81**: Added support for 2.8+; Updated Javascript, simplified interface.
 *	**0.76** and **0.77**: Bug fix: Selected start tab was not opened for accordion type widgets.
@@ -61,8 +60,8 @@ Post your questions in [WordPress support forum](http://wordpress.org/tags/tabbe
 
 = Widget X doesn't appear in the drop-down selection =
 
-It is most likely that the widget must be configured before it can be used, 
-therefore place it in the 'Invisible Sidebar Area', refresh the Widget 
+It is most likely that the widget must be configured before it can be used -- 
+place it in the 'Invisible Sidebar Area', refresh the Widget 
 admin page and it should appear in the drop-down selection.
 
 == Screenshots ==

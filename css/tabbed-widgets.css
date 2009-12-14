@@ -26,8 +26,8 @@
 
 /* Default theme */
 
-#sidebar ul.tw-tabbed-nav { margin:0; padding:0; }
-#sidebar ul.tw-tabbed-nav li { background:none; display:block; list-style-image:none; margin-right:0.5em; }
-#sidebar ul.tw-tabbed-nav a { padding:0.25em; }
-#sidebar ul.tw-content { margin-left:0; padding-left:0; }
-#sidebar ul.tw-tabbed-nav li:before { content:none; }
+#sidebar ul.tabbed-widget ul.tw-tabbed-nav { margin:0; padding:0; }
+#sidebar ul.tabbed-widget ul.tw-tabbed-nav li { background:none; display:block; list-style-image:none; margin-right:0.5em; }
+#sidebar ul.tabbed-widget ul.tw-tabbed-nav a { padding:0.25em; }
+#sidebar ul.tabbed-widget ul.tw-content { margin-left:0; padding-left:0; }
+#sidebar ul.tabbed-widget ul.tw-tabbed-nav li:before { content:none; }
