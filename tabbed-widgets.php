@@ -3,7 +3,7 @@
 Plugin Name: Tabbed Widgets
 Plugin URI: http://konstruktors.com/blog/projects-services/wordpress-plugins/tabbed-accordion-widgets/
 Description: Place widgets into tabbed and accordion type interface.
-Version: 0.83
+Version: 0.84
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com/blog/
 
@@ -61,8 +61,8 @@ class tabbedWidgets {
 		// Stored widgets include all default widget settings and function calls
 		if (is_array($sidebars_widgets) && !empty($sidebars_widgets)) {
 			foreach ($sidebars_widgets as $sidebar_id => $widgets) {
-				if (!empty($widgets)) {
-					foreach ($widgets as $widget_id) {
+				if (!empty($widgets) && $sidebar_id != 'wp_inactive_widgets') {
+					foreach ($widgets as $no => $widget_id) {
 						// Save original widgets, except the self	
 						if (strpos($widget_id, 'tabbed-widget') === false) {
 							$this->stored_widgets[$widget_id] = $wp_registered_widgets[$widget_id];

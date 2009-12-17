@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kaspa
 Tags: widget, widgets, tabs, tabbed widgets, accordion, sidebar, ui
 Requires at least: 2.8
 Tested up to: 2.9
-Stable tag: 0.83
+Stable tag: 0.84
 
 Create tab and accordion type widgets without writing a single line of code.
 
@@ -15,7 +15,7 @@ lot of vertical space and make it look less cluttered. Accordion type tabs are
 particularly useful if you want to have longer tab titles or more tabs that 
 wouldn't otherwise fit into the given horizontal width.
 
-= Tabbed Widget features: =
+= Features: =
 
 *	Use other widgets for the tab content and specify a custom tab title.
 *	Make tabs rotate in a set interval so that they become more noticeable and prominent.
@@ -40,6 +40,7 @@ Therefore, I offer [Tabbed Widget design customization service](http://konstrukt
 
 == Changelog ==
 
+*	**0.84** (Dec 17, 2009) -- List of available widgets was also trying to list inactive widgets, which caused errors on some setups. Now we include only the active widgets (placed inside any of the sidebars).
 *	**0.83** (Dec 14, 2009) -- Another fix of javascript variables.
 *	**0.82**: Fixed empty javascript variables, updated readme.txt and faq.
 *	**0.81**: Added support for 2.8+; Updated Javascript, simplified interface.
@@ -63,6 +64,7 @@ Post your questions in [WordPress support forum](http://wordpress.org/tags/tabbe
 It is most likely that the widget must be configured before it can be used -- 
 place it in the 'Invisible Sidebar Area', refresh the Widget 
 admin page and it should appear in the drop-down selection.
+
 
 == Screenshots ==
 
