@@ -3,8 +3,8 @@ Contributors: kasparsd
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kaspars%40konstruktors%2ecom&item_name=Tabbed%20Widgets%20Plugin%20for%20WordPress&no_shipping=1&no_note=1&tax=0&currency_code=EUR&lc=LV&bn=PP%2dDonationsBF&charset=UTF%2d8
 Tags: widget, widgets, tabs, tabbed widgets, accordion, sidebar, ui
 Requires at least: 2.8
-Tested up to: 2.9
-Stable tag: 0.84
+Tested up to: 3.0
+Stable tag: 0.9
 
 Create tab and accordion type widgets without writing a single line of code.
 
@@ -40,6 +40,7 @@ Therefore, I offer [Tabbed Widget design customization service](http://konstrukt
 
 == Changelog ==
 
+*	**0.9** (Apr 10, 2010) -- Add IDs to tab links, so that one can style each tab individualy (use background images, for example).
 *	**0.84** (Dec 17, 2009) -- List of available widgets was also trying to list inactive widgets, which caused errors on some setups. Now we include only the active widgets (placed inside any of the sidebars).
 *	**0.83** (Dec 14, 2009) -- Another fix of javascript variables.
 *	**0.82**: Fixed empty javascript variables, updated readme.txt and faq.

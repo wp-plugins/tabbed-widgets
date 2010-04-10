@@ -19,7 +19,7 @@ $tw(document).ready(function() {
 			// Build  tab navigation
 			var $tabbed_nav = '<ul class="tw-tabbed-nav">';
 			$tw('.tw-title', this).each(function(i) {
-				$tabbed_nav += '<li><a href="#tw-content-'+ $widgetid +'-'+ i +'">' + $tw(this).text() + '</a></li>';
+				$tabbed_nav += '<li id="tab-link-'+ $widgetid +'-'+ i +'"><a href="#tw-content-'+ $widgetid +'-'+ i +'">' + $tw(this).text() + '</a></li>';
 				$tab_count++;
 			}).hide();
 			$tabbed_nav += '</ul>';
