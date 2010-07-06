@@ -34,7 +34,7 @@ $tw(document).ready(function() {
 			jQuery.extend($options, { active: $start_tab });
 			
 			//console.log($options);
-			//console.log($rotate_interval);
+			//console.log($start_tab);
 			
 			if ($do_rotate)
 				$tw('.tw-tabs', this).tabs($options).tabs('rotate', $rotate_interval);

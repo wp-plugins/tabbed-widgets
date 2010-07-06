@@ -3,7 +3,7 @@
 Plugin Name: Tabbed Widgets
 Plugin URI: http://konstruktors.com/blog/projects-services/wordpress-plugins/tabbed-accordion-widgets/
 Description: Place widgets into tabbed and accordion type interface.
-Version: 0.9
+Version: 0.91
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com/blog/
 
@@ -154,12 +154,12 @@ class tabbedWidgets {
 			if (!is_numeric($start_tab))
 				$start_tab = 0;
 			
-			if (empty($rotate) || $rotate != 'on')
+			if (empty($rotate))
 				$rotate = 0;
 			else 
 				$rotate = 1;
 			
-			if (empty($random_start) || $random_start != 'on')
+			if (empty($random_start))
 				$random_start = 0;
 			else 
 				$random_start = 1;
@@ -268,25 +268,17 @@ class tabbedWidgetWidget extends WP_Widget {
 			$callback = $wp_registered_widgets[$inside['widget']]['callback'];
 			$params = array_merge(array($args), (array)$wp_registered_widgets[$inside['widget']]['params']);
 			
-			if (is_callable($callback)) {
-				if (strstr($args['before_widget'], '<li'))
-					$wrap_tag = 'ul';
-				else
-					$wrap_tag = 'div';
-				
+			if (is_callable($callback)) {				
 				$widget_title = trim($inside['title']);
 				if (empty($widget_title))
 					$widget_title = $this->active_widgets[$inside['widget']]['titles']['original_title'];
 					
-				$params[0]['before_widget'] = '';
+				$params[0]['before_widget'] = '<div id="tw-content-'. $widget_no .'-'. $id .'" class="tw-content">';
 				$params[0]['before_title'] = '<span style="display:none;">';
-				$params[0]['after_title'] = '</span>'
-					. '<h4 id="tw-title-'. $widget_no .'-'. $id .'" class="tw-title">'
-					. $widget_title
-					. '</h4> <'. $wrap_tag .' id="tw-content-'. $widget_no .'-'. $id .'" class="tw-content">';
-				$params[0]['after_widget'] = '</'. $wrap_tag .'>';
+				$params[0]['after_title'] =  '</span><h4 id="tw-title-'. $widget_no .'-'. $id .'" class="tw-title">' . $widget_title. '</h4>';
+				$params[0]['after_widget'] = '</div>';
 				
-				$result .= $this->callMe($callback, $params); 
+				$result .= $this->callMe($callback, $params);
 			} else {
 				$result .= '<!-- t-error: Callback not possible. -->';
 			}
@@ -376,7 +368,7 @@ class tabbedWidgetWidget extends WP_Widget {
 				}
 			}
 		} else {
-			$list .= '<option value="error" selected="selected">Widget List Empty (error no.1)</option>';
+			$list .= '<option value="error" selected="selected">Place widgets in the "Invisible Sidebar" to make them available here.</option>';
 		}
 		
 		$list .= '</select></label>';
