@@ -1,9 +1,9 @@
 <?php
 /*
 Plugin Name: Tabbed Widgets
-Plugin URI: http://konstruktors.com/blog/projects-services/wordpress-plugins/tabbed-accordion-widgets/
+Plugin URI: http://konstruktors.com/projects/wordpress-plugins/tabbed-accordion-widgets/
 Description: Place widgets into tabbed and accordion type interface.
-Version: 0.91
+Version: 1.1
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com/blog/
 
@@ -13,44 +13,44 @@ Thanks for suggestions to Ronald Huereca.
 // Option row where we store widget copies, as other plugins (such as widget context) might take them over
 define('ORIGINAL_WIDGETS', 'tabbed_widgets_originals');
 
-// Necessary for the javascript to work
-$root = dirname(dirname(dirname(dirname(__FILE__))));
-if (file_exists($root . '/wp-load.php'))
-	require_once($root . '/wp-load.php');
-
-// Start the engine
-if (isset($_GET['returnjs']))
-	new tabbedWidgets(true); // Return JS
-else
-	new tabbedWidgets();
-
+new tabbedWidgets();
 
 class tabbedWidgets {
-	var $debbug_enabled = true;
 	var $tabbed_widget_content = array();
 	var $stored_widgets = array();
 	var $plugin_path = '';
 	
-	function tabbedWidgets($printjsvars = false) {			
-		$this->plugin_path = WP_CONTENT_URL . '/plugins/'. plugin_basename(dirname(__FILE__)) . '/';
+	function tabbedWidgets() {			
+		$this->plugin_path = WP_PLUGIN_URL  . '/' . basename(dirname(__FILE__)) . '/';
+
+		add_action('widgets_init', array($this, 'checkThemeCompat'));
 		
-		if (!$printjsvars) {
-			add_action('widgets_init', array($this, 'initSidebarAndWidget'), 1);
-			add_action('sidebar_admin_setup', array($this, 'saveWidgets'), 1); // Save it in our own row, as other plugins might take it over when we need it. Like widget context plugin, for example.
-			add_action('admin_menu', array($this, 'addOptionsPage'));
-			add_action('wp_head', array($this, 'addHeader'), 1);
-		} elseif ($printjsvars) {
-			$this->printJsVars();	
+		add_action('widgets_init', array($this, 'initSidebarAndWidget'), 1);
+		add_action('sidebar_admin_setup', array($this, 'saveWidgets'), 1); // Save it in our own row, as other plugins might take it over when we need it. Like widget context plugin, for example.
+		add_action('admin_menu', array($this, 'addOptionsPage'));
+		add_action('wp_head', array($this, 'addHeader'), 1);
+		add_action('wp_footer', array($this, 'printJsVars'));
+	}
+	
+	function checkThemeCompat() {
+		global $wp_registered_sidebars;
+		
+		$sample_container = array_shift($wp_registered_sidebars);
+		if (!strstr($sample_container['before_widget'], '%1$s')) {
+			add_action('admin_notices', array($this, 'theme_not_compatible'));
 		}
+	}
+	
+	function theme_not_compatible() {
+		echo '<div class="updated fade"><p>', __("Tabbed Widgets plugin isn't compatible with your theme <em>". get_current_theme() ."</em>, because it doesn't use unique widgets identifiers. <a href='http://konstruktors.com/blog/wordpress/409-is-your-wordpress-theme-good-enough/'>Here is how you can fix it</a>. Please disable the plugin while you fix this issue."), '</p></div>';
 	}
 	
 	function initSidebarAndWidget() {
 		// Init tabbed widgets
 		register_widget('tabbedWidgetWidget');
 		
-		// Add widgetized area for placing and configuring widgets that are going to be used in tabbed widgets.
-		if (function_exists('register_sidebar'))
-		    register_sidebar(array('name' => 'Invisible Widget Area'));
+		// Since 3.0 we can use the inactive widgets area. Leave this for compatability.
+		register_sidebar(array('name' => 'Invisible Widget Area'));
 	}
 	
 	function saveWidgets() {
@@ -116,27 +116,21 @@ class tabbedWidgets {
 	}
 	
 	function addHeader() {
-		wp_enqueue_script('jquery');
-		wp_enqueue_script('jquery-ui-core');
 		wp_enqueue_script('jquery-ui-tabs');
-		wp_enqueue_script('jquery-ui-effects',  $this->plugin_path . 'js/jquery-ui-effects.min.js', array('jquery', 'jquery-ui-core'));
-		wp_enqueue_script('jquery-ui-accordion',  $this->plugin_path . 'js/jquery-ui-accordion.min.js', array('jquery', 'jquery-ui-core'));
-		wp_enqueue_script('jquery-ui-cookie',  $this->plugin_path . 'js/jquery-cookie.min.js', array('jquery'));
-		// init all
-		wp_enqueue_script('tabbed-widgets-init',  $this->plugin_path . basename(__FILE__) . '?returnjs=true', array('jquery', 'jquery-ui-tabs', 'jquery-ui-accordion'));
-		// Add Stylesheet
+		wp_enqueue_script('jquery-ui-effects',  $this->plugin_path . 'js/jquery-ui-effects.min.js', array('jquery-ui-tabs'), false, true);
+		wp_enqueue_script('jquery-ui-accordion',  $this->plugin_path . 'js/jquery-ui-accordion.min.js', array('jquery-ui-tabs'), false, true);
+		wp_enqueue_script('jquery-ui-cookie',  $this->plugin_path . 'js/jquery-cookie.min.js', array('jquery-ui-tabs'), false, true);
+		
+		// Add default widgets styles
 		wp_enqueue_style('tabbed-widgets', $this->plugin_path . 'css/tabbed-widgets.css');
+		
+		if (get_current_theme() == 'Twenty Ten')
+			wp_enqueue_style('tabbed-widgets-2010', $this->plugin_path . 'css/twenty-ten.css');
 	}	
 	
 	function printJsVars() {
 		// Read tabbed widget options
 		$tw_options = get_option('widget_tabbed-widget');
-		
-		// read the tabs init js file
-		$filename = dirname(__FILE__) . '/js/init-plugin.js';
-		$handle = fopen($filename, "r");
-		$contents = fread($handle, filesize($filename));
-		fclose($handle);
 		
 		$optionsvar = '$rotateoptions';
 		$jsvars = 'var ' . $optionsvar . ' = new Array();' . "\n";
@@ -180,13 +174,9 @@ class tabbedWidgets {
 			$jsvars .= $optionsvar . '[' . $tw_id . ']["interval"] = ' . $rotate_time . ";\n";
 		}
 		
-		header('Content-type: application/x-javascript');
-		header('Pragma: private');
-		header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 31356000) . ' GMT');
-		header('Cache-Control: max-age=31356000, must-revalidate');
-		
-		print $jsvars . "\n";
-		print $contents;
+		if (count($tw_options) > 0)
+			echo '<script type="text/javascript">', $jsvars, '</script>', "\n",
+				'<script type="text/javascript" src="', $this->plugin_path, '/js/init-plugin.js"></script>', "\n";
 	}
 }
 
@@ -211,7 +201,7 @@ class tabbedWidgetWidget extends WP_Widget {
 		// return array();
 	}
 	
-	function form($instance) {			
+	function form($instance) {
 		$options .= '<div class="widget-wrapper">';
 		$options .= '<p class="tw-title">' . $this->makeTitleOption($instance, 'show_title', 'Show Title') . '<input type="text" name="' . $this->get_field_name('widget_title') . '" class="tw-widget-title" value="'. esc_attr($instance['widget_title']) .'" /></p>';
 		
@@ -219,7 +209,7 @@ class tabbedWidgetWidget extends WP_Widget {
 		$options .= '<span>' . $this->makeSimpleRadio($instance, 'style', 'tabs', __('tabs')) . ' '. __('or') .'</span> ';
 		$options .= '<span>' . $this->makeSimpleRadio($instance, 'style', 'accordion', __('accordion')) . '</span></p>';
 		$options .= $this->makeDonate();
-		$options .= '<p class="tw-widget-note">' . __('Place widget inside the <em>Invisible Widget Area</em> to make it available here.') . '</p>';
+		$options .= '<p class="tw-widget-note">' . __('Place widgets inside the <em>Invisible Widget Area</em> to make them available here.') . '</p>';
 			
 		for ($count = 0; $count < 5; $count++) {
 			$count_out = $count + 1;

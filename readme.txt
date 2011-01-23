@@ -3,28 +3,31 @@ Contributors: kasparsd
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kaspars%40konstruktors%2ecom&item_name=Tabbed%20Widgets%20Plugin%20for%20WordPress&no_shipping=1&no_note=1&tax=0&currency_code=EUR&lc=LV&bn=PP%2dDonationsBF&charset=UTF%2d8
 Tags: widget, widgets, tabs, tabbed widgets, accordion, sidebar, ui
 Requires at least: 2.9
-Tested up to: 3.0
-Stable tag: 0.91
+Tested up to: 3.1
+Stable tag: 1.1
 
 Create tab and accordion type widgets without writing a single line of code.
 
 == Description ==
 
-Tabbed interfaces are the most common on newspaper type website where they can save a 
-lot of vertical space and make it look less cluttered. Accordion type tabs are 
-particularly useful if you want to have longer tab titles or more tabs that 
+Tabbed interfaces can save a lot of vertical space and make your website look less cluttered. 
+Accordion type tabs are particularly useful if you want to have longer tab titles or more tabs that 
 wouldn't otherwise fit into the given horizontal width.
 
 = Features: =
 
-*	Use other widgets for the tab content and specify a custom tab title.
-*	Make tabs rotate in a set interval so that they become more noticeable and prominent.
+*	Use other widgets for tab content and specify custom tab titles.
+*	Make tabs rotate in a set interval, which makes them more noticeable and prominent.
 *	Set a random start tab on each page load so that all tabbed content gets equal exposure.
 *	Make unlimited number of tabbed widgets that can be then used as regular widgets under ‘Design’ › ‘Widgets’.
 
-= Widget Design Customization =
+= Why are Tabbed Widgets better than your theme's built-in tabs? =
 
-Tabbed widgets created by this plugin have very little CSS applied by default, because every theme is very different.
+With Tabbed Widgets you can use *any widget* inside the tabbed interface and you are no longer limited to what the theme designer had in mind.
+
+= Tabbed Widget design services =
+
+Tabbed widgets created by this plugin have very little CSS applied by default because every theme is very different.
 
 Therefore, I offer [Tabbed Widget design customization service](http://konstruktors.com/blog/projects-services/wordpress-plugins/tabbed-accordion-widgets/#service).
 
@@ -40,6 +43,7 @@ Therefore, I offer [Tabbed Widget design customization service](http://konstrukt
 
 == Changelog ==
 
+*	**1.1** (Jan 23, 2011) -- Added support for WP 3.1, updated accordion lib, new default CSS for Twenty Ten, simplified base CSS for all other themes, improved performance (use inline JS vars instead of another WP call).
 *	**0.9** (Jun 6, 2010) -- CSS fixes for Twenty Ten and WP 3.0 in general.
 *	**0.9** (Apr 10, 2010) -- Add IDs to tab links, so that one can style each tab individualy (use background images, for example).
 *	**0.84** (Dec 17, 2009) -- List of available widgets was also trying to list inactive widgets, which caused errors on some setups. Now we include only the active widgets (placed inside any of the sidebars).
@@ -57,6 +61,9 @@ Therefore, I offer [Tabbed Widget design customization service](http://konstrukt
 *	**0.1**: Initial public release.
 
 == Upgrade Notice ==
+
+= 1.1 =
+Added support for WP 3.1 and improved performance.
 
 = 0.9 =
 Fixes CSS for Twenty Ten and WordPress 3.0 in general.
