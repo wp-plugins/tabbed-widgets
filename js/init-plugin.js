@@ -37,7 +37,6 @@ jQuery(document).ready(function($) {
 			$('.tw-tabs', this).prepend($tabbed_nav);
 			
 			var $options = { cookie: { expires: 30 } };
-			
 			jQuery.extend($options, { active: $start_tab });
 			
 			if ($do_rotate) {
@@ -48,7 +47,7 @@ jQuery(document).ready(function($) {
 					$(this).tabs($options).tabs('rotate', $rotate_interval);
 				});
 			} else {
-				$(this).tabs($options);
+				$('.tw-tabs', this).tabs($options);
 			}
 			
 		} else if ($widgetstyle == 'accordion') {

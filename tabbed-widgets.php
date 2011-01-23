@@ -3,7 +3,7 @@
 Plugin Name: Tabbed Widgets
 Plugin URI: http://konstruktors.com/projects/wordpress-plugins/tabbed-accordion-widgets/
 Description: Place widgets into tabbed and accordion type interface.
-Version: 1.2
+Version: 1.3
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com/blog/
 
@@ -22,20 +22,21 @@ class tabbedWidgets {
 	
 	function tabbedWidgets() {			
 		$this->plugin_path = WP_PLUGIN_URL  . '/' . basename(dirname(__FILE__)) . '/';
-
-		add_action('widgets_init', array($this, 'checkThemeCompat'));
 		
 		add_action('widgets_init', array($this, 'initSidebarAndWidget'), 1);
 		add_action('sidebar_admin_setup', array($this, 'saveWidgets'), 1); // Save it in our own row, as other plugins might take it over when we need it. Like widget context plugin, for example.
 		add_action('admin_menu', array($this, 'addOptionsPage'));
 		add_action('wp_head', array($this, 'addHeader'), 1);
 		add_action('wp_footer', array($this, 'printJsVars'));
+		
+		add_action('widgets_init', array($this, 'checkThemeCompat'));
 	}
 	
 	function checkThemeCompat() {
 		global $wp_registered_sidebars;
 		
-		$sample_container = array_shift($wp_registered_sidebars);
+		$tmp = $wp_registered_sidebars;
+		$sample_container = array_shift($tmp);
 		if (!strstr($sample_container['before_widget'], '%1$s')) {
 			add_action('admin_notices', array($this, 'theme_not_compatible'));
 		}
@@ -116,16 +117,14 @@ class tabbedWidgets {
 	}
 	
 	function addHeader() {
-		wp_enqueue_script('jquery-ui-tabs');
-		wp_enqueue_script('jquery-ui-effects',  $this->plugin_path . 'js/jquery-ui-effects.min.js', array('jquery-ui-tabs'), false, true);
-		wp_enqueue_script('jquery-ui-accordion',  $this->plugin_path . 'js/jquery-ui-accordion.min.js', array('jquery-ui-tabs'), false, true);
+		wp_enqueue_script('jquery-ui-google',  'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js', array('jquery'), false, true);
 		wp_enqueue_script('jquery-ui-cookie',  $this->plugin_path . 'js/jquery-cookie.min.js', array('jquery-ui-tabs'), false, true);
 		
 		// Add default widgets styles
 		wp_enqueue_style('tabbed-widgets', $this->plugin_path . 'css/tabbed-widgets.css');
 		
 		if (get_current_theme() == 'Twenty Ten')
-			wp_enqueue_style('tabbed-widgets-2010', $this-> . 'css/twenty-ten.css');
+			wp_enqueue_style('tabbed-widgets-2010', $this->plugin_path . 'css/twenty-ten.css');
 	}	
 	
 	function printJsVars() {
