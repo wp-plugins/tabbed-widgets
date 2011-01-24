@@ -3,7 +3,7 @@
 Plugin Name: Tabbed Widgets
 Plugin URI: http://konstruktors.com/projects/wordpress-plugins/tabbed-accordion-widgets/
 Description: Place widgets into tabbed and accordion type interface.
-Version: 1.3
+Version: 1.3.1
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com/blog/
 
@@ -117,8 +117,8 @@ class tabbedWidgets {
 	}
 	
 	function addHeader() {
-		wp_enqueue_script('jquery-ui-google',  'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js', array('jquery'), false, true);
-		wp_enqueue_script('jquery-ui-cookie',  $this->plugin_path . 'js/jquery-cookie.min.js', array('jquery-ui-tabs'), false, true);
+		wp_enqueue_script('jquery-ui-accordion',  $this->plugin_path . 'js/jquery-ui-custom.min.js', array('jquery'), false, true);
+		wp_enqueue_script('jquery-ui-cookie',  $this->plugin_path . 'js/jquery-cookie.min.js', array('jquery-ui-accordion'), false, true);
 		
 		// Add default widgets styles
 		wp_enqueue_style('tabbed-widgets', $this->plugin_path . 'css/tabbed-widgets.css');

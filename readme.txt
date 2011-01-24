@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kaspa
 Tags: widget, widgets, tabs, tabbed widgets, accordion, sidebar, ui
 Requires at least: 2.9
 Tested up to: 3.1
-Stable tag: 1.3
+Stable tag: 1.3.1
 
 Create tab and accordion type widgets without writing a single line of code.
 
@@ -43,6 +43,7 @@ Therefore, I offer [Tabbed Widget design customization service](http://konstrukt
 
 == Changelog ==
 
+*	**1.3.1** (Jan 24, 2011) -- Revert to local jQuery UI core, widgets, accordion and tabs hosting. Bundle everything in one file.
 *	**1.3** (Jan 23, 2011) -- Bug fixes. Use Google CDN hosted jQuery UI. 
 *	**1.2** (Jan 23, 2011) -- Bug fixes.
 *	**1.1** (Jan 23, 2011) -- Added support for WP 3.1, updated accordion lib, new default CSS for Twenty Ten, simplified base CSS for all other themes, improved performance (use inline JS vars instead of another WP call).
@@ -63,6 +64,9 @@ Therefore, I offer [Tabbed Widget design customization service](http://konstrukt
 *	**0.1**: Initial public release.
 
 == Upgrade Notice ==
+
+= 1.3.1 =
+Revert to local jQuery UI hosting. Includes jQuery UI Widgets, which was missing in 1.3.
 
 = 1.3 =
 Bug fixes. Use Google CDN hosted jQuery UI.
@@ -87,6 +91,6 @@ admin page and it should appear in the drop-down selection.
 
 == Screenshots ==
 
-1. Tabbed Widgets settings
-2. Tab layout on Twenty Ten
-3. Accordion layout on Twenty Ten
+1. Tab layout on Twenty Ten
+2. Accordion layout on Twenty Ten
+3. Tabbed Widgets settings
